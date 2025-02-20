@@ -25,6 +25,10 @@ def add_security_headers(response):
 
 
 
+@app.errorhandler(429)
+def too_many_requests(error):
+    return render_template('429.html', title="გადაჭარბებული მოთხოვნების ლიმიტი - ვეფხისტყაოსანი"), 429
+
 
 def send_account_update_email(user, changed_fields):
     """აგზავნის ელფოსტას, როდესაც მომხმარებელი ცვლის მონაცემებს."""
