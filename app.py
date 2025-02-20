@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for, flash, request,abort
+from flask import render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.security import check_password_hash, generate_password_hash
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadTimeSignature
@@ -6,8 +6,6 @@ from itsdangerous import URLSafeTimedSerializer
 from flask_mail import Message
 from extensions import app, mail,db
 from models import User
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 from forms import RegisterForm, MessageForm, LoginForm, UpdateForm, ForgotPasswordForm,ResetPasswordForm, FormUpdateForm
 
 
@@ -16,8 +14,6 @@ s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
 
 
-limiter = Limiter(get_remote_address, app=app, default_limits=["5 per minute"])
-
 @app.after_request
 def add_security_headers(response):
     response.headers["X-Frame-Options"] = "DENY"  # ბლოკავს ჩასმას სხვა საიტებზე
@@ -25,14 +21,7 @@ def add_security_headers(response):
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"  # Referer header-ის კონტროლი
     return response
 
-@app.before_request
-def limit_remote_addr():
-    if request.remote_addr not in ['trusted_ip1', 'trusted_ip2']:
-        abort(403)
 
-@app.errorhandler(429)
-def too_many_requests(error):
-    return render_template('429.html', title="გადაჭარბებული მოთხოვნების ლიმიტი - ვეფხისტყაოსანი"), 429
 
 
 def send_account_update_email(user, changed_fields):
@@ -278,22 +267,19 @@ def author():
 
 # 📌 ავტორიზაციის როუტი - მხოლოდ ვერიფიცირებული მომხმარებლებისთვის
 @app.route("/login", methods=["GET", "POST"])
-@limiter.limit("5 per minute")
 def login():
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
         if user and check_password_hash(user.password, form.password.data):
             if not user.is_verified:
-                send_verification_email(user.email)
-                flash("გთხოვთ, დაადასტუროთ თქვენი ელ-ფოსტა!", "warning")
-                return redirect(url_for("login"))
+                send_verification_email(user.email)  # ხელახალი გაგზავნა
+                flash("თქვენს ელ-ფოსტაზე ვერიფიკაციის ბმული გაგზავნილია!", "warning")
+                return redirect(url_for('login'))
             login_user(user)
-            flash("შესვლა წარმატებულია!", "success")
-            return redirect(url_for("index"))
-        else:
-            flash("არასწორი მომხმარებლის სახელი ან პაროლი!", "danger")
+            return redirect(url_for("index")) 
     return render_template("login.html", form=form, title="ავტორიზაცია - ვეფხისტყაოსანი")
+
 
 @app.route("/poem")
 def poem():
