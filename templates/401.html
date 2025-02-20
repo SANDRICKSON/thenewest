@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container d-flex flex-column justify-content-center align-items-center vh-100">
+    <div class="card shadow-lg p-5 text-center border-danger">
+        <h1 class="text-danger fw-bold">🚫 წვდომა აკრძალულია</h1>
+        <p class="fw-semibold text-secondary mt-3">
+            გთხოვთ გაიაროთ <strong>რეგისტრაცია</strong> ან <strong>ავტორიზაცია</strong>, რათა მიიღოთ წვდომა ამ გვერდზე.
+        </p>
+        <div class="mt-4">
+            <a href="{{ url_for('register') }}" class="btn btn-success me-2">✍️ რეგისტრაცია</a>
+            <a href="{{ url_for('login') }}" class="btn btn-primary me-2">🔐 ავტორიზაცია</a>
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">🏠 მთავარი გვერდი</a>
+        </div>
+    </div>
+</div>
+
+<style>
+
+    .card {
+        max-width: 500px;
+        background: white;
+        border-radius: 15px;
+    }
+
+    h1, p {
+        font-family: "BPG Classic Medium", sans-serif;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="admin-container">
+    <h2>ადმინის გვერდი</h2>
+    <p>თქვენ შეგიძლიათ დაამატოთ ან გააძევოთ მომხმარებლები</p>
+    <a href="{{ url_for('view_users') }}" class="btn">დარეგისტრირებული მომხმარებლების ხილვა</a>
+</div>
+
+<style>
+    body {
+        background-color: #ecf0f1;
+        font-family: "BPG Classic Medium", sans-serif;
+        color: #444;
+    }
+
+    .admin-container {
+        max-width: 500px;
+        background: white;
+        padding: 30px;
+        margin: 80px auto;
+        border-radius: 10px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+
+    h2 {
+        font-size: 32px;
+        color: #2c3e50;
+        margin-bottom: 20px;
+        text-transform: uppercase;
+    }
+
+    p {
+        font-size: 18px;
+        color: #7f8c8d;
+        margin-bottom: 20px;
+    }
+
+    .btn {
+        display: block;
+        width: 100%;
+        max-width: 250px;
+        padding: 12px;
+        font-size: 16px;
+        color: white;
+        background-color: #2980b9;
+        border-radius: 30px;
+        text-decoration: none;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        margin: 20px auto 0;
+    }
+
+    .btn:hover {
+        background-color: #3498db;
+        box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
+        transform: translateY(-2px);
+    }
+
+    .btn:active {
+        background-color: #1d6fa5;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transform: translateY(2px);
+    }
+</style>
+{% endblock %}

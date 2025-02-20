@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block content %}
+<main>
+    <section class="hero">
+        <h1 data-lang="shesaxeb">პროექტის შესახებ</h1>
+    </section>
+
+    <p class="subtitle" data-lang="explore"><b>
+        "ვეფხისტყაოსანი" არის საგანმანათლებლო ვებსაიტი, რომელიც შექმნა დამწყებმა FULLSTACK დეველოპერმა სანდრო ქათამაძემ
+        </b>
+       </p>
+    <section class="project-info">
+        <div class="content">
+            <h2 data-lang="details"><i class="fas fa-info-circle"></i><b> პროექტის დეტალები</b></h2>
+            <p data-lang="author"><b><i class="fas fa-user"></i> პროექტის ავტორი:</b> სანდრო ქათამაძე</p>
+        </div>
+    </section>
+    <section class="author-info">
+        <div class="content">
+            <h2 class="about" data-lang="aboutauthor"><b>ავტორის შესახებ</b></h2>
+
+            <div class="author-details">
+                <img src="https://i.postimg.cc/2SxRP7L1/sandro.jpg
+                " alt="სანდრო ქათამაძე" class="author-image">
+                <img src="https://i.postimg.cc/1XFbMGZ5/roboti.jpg" class="author-image">
+                <img src="https://i.postimg.cc/sgmqnfbS/kompiuteri.jpg" class="author-image">
+                <img src="https://i.postimg.cc/gJCTwx69/pijaki.jpg" class="author-image">
+                <img src="https://i.postimg.cc/dVsSTPD0/sandrikela.jpg" class="author-image">
+            </div>
+
+            <div class="author-bio">
+                <p data-lang="name"><i class="fas fa-user"></i> <b>სანდრო ქათამაძე</b></p>
+                <p data-lang="school"><i class="fas fa-school"></i> <strong>განათლება:</strong> ქალაქი ჭიათურა - მეხუთე საჯარო სკოლა</p>
+                <p data-lang="skillwill"><i class="fas fa-graduation-cap"></i> <strong>სტუდენტი:</strong> SKILLWILL NEO UNIVERSITY - Backend Development</p>
+                <p data-lang="front"><i class="fas fa-laptop-code"></i> <strong>კურსდამთავრებული:</strong> TBC Techschool - Front End Development</p>
+                <p data-lang="mobile"><i class="fas fa-mobile-alt"></i> <strong>კურსდამთავრებული:</strong> TBC Techschool - მობაილ დეველოპმენტი</p>
+                <p data-lang="explorium"><i class="fas fa-code"></i> <strong>კურსდამთავრებული:</strong> Explorium - პითონ ჩეთბოტი და ნარატივ დიზაინი</p>
+            </div>
+        </div>
+
+        <p>
+            <i class="fas fa-envelope"></i>
+            <b>Gmail:</b> <a href="mailto:sandroqatamadze79@gmail.com" class="email-link"><b>sandroqatamadze79@gmail.com</b></a>
+        </p>
+
+        <div class="author-projects">
+            <b data-lang="myprojects">სანდრო ქათამაძის პროექტები</b>
+        </div>
+    </section>
+
+    <a href="https://drive.google.com/uc?export=download&id=1cUeuNnM-a1v1oAuC2kAubmszUjUEnWT7" download>
+        <button class="download-civlab"><i class="fas fa-download"></i>  CIVLAB დააჭირეთ ჩამოსატვირთად</button>
+    </a>
+
+    <a href="https://drive.google.com/file/d/12mH_JCh6vACeBxAdGFP43d-LhCw3y9jS/view?usp=sharing" download>
+        <button class="download-book"><i class="fas fa-download"></i> BOOK დააჭირეთ ჩამოსატვირთად</button>
+    </a>
+
+    <a href="https://drive.google.com/file/d/1eD94-eQMoNZAYLg64z85_UkpIKnCrVfT/view?usp=sharing"><button class="download-storybook"><i class="fas fa-download"></i>  STORYBOOK დააჭირეთ ჩამოსატვირთად</button></a>
+
+    <a href="https://psychobot-4mkv.onrender.com/" target="_blank">
+        <button class="psychobot-button"><i class="fas fa-brain"></i>  PSYCHOBOT - ფსიქოლოგიური ჩეთბოტი</button>
+    </a>
+
+
+    <a href="https://sandrickson.github.io/SANDROTRAVELINCHIATURA/FINAL%20PROJECT/index.html" target="_blank">
+        <button class="chiatura"><i class="fas fa-map-marked-alt"></i>  Explore Chiatura - ტურისტულ-შემეცნებითი ვებგვერდი</button>
+    </a>
+
+   
+    
+
+    <a href="https://www.animachatbotics.com/chatbot/Chat/4444" target="_blank">
+        <button class="doctorbot"><i class="fas fa-stethoscope"></i> ექიმი ჩეთბოტი მედეა - Animachatbotics</button>
+    </a>
+
+    <a href="https://fuchsia-guinna-72.tiiny.site/" target="_blank">
+        <button class="resume"><i class="fas fa-id-card"></i> სანდრო ქათამაძის რეზიუმე</button>
+    </a>
+    <style>
+        
+
+        p,h1,h2 {
+            font-family: "BPG Classic Medium", sans-serif;
+            
+        }
+        .email-link{
+            font-weight: bold;
+            color: black;
+        }
+    
+.author-details {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        padding: 20px;
+                        flex-wrap: wrap; 
+                    }
+
+                    .author-details img {
+                        width: 300px; 
+                        height: auto; 
+                        border-radius: 10px;
+                        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+                        transition: transform 0.3s ease;
+                        margin-bottom: 20px; 
+                    }
+
+                    .author-details img:hover {
+                        transform: scale(1.1); 
+                    }
+
+                    @media (max-width: 768px) {
+                        .author-details {
+                            flex-direction: column; 
+                            align-items: center; 
+                        }
+
+                        .author-details img {
+                            width: 80%; 
+                        }
+                    }
+
+        .shota{
+            background-color: brown;
+            color: white;
+            font-family: "BPG Classic Medium", sans-serif;
+            font-size: 20px;
+        }
+.resume{
+        background-color: orange;
+        color: white;
+        font-family: "BPG Classic Medium", sans-serif;
+        
+    }
+.author-projects{
+    font-family: "BPG Classic Medium", sans-serif;
+        
+}
+    .doctorbot{
+        background-color: red;
+        color: white;
+        font-family: "BPG Classic Medium", sans-serif;
+       
+    }
+
+    button {
+        padding: 10px 20px;
+        font-size: 16px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        margin: 10px 0;
+        font-family: "BPG Classic Medium", sans-serif;
+        
+    }
+
+    .download-civlab {
+        background-color: #4CAF50; 
+        color: white;
+        font-family: "BPG Classic Medium", sans-serif;
+        
+    }
+
+    .download-civlab:hover {
+        background-color: #45a049;
+    }
+
+    .download-book {
+        background-color: #FF5722; 
+        color: white;
+    }
+
+    .download-book:hover {
+        background-color: #e64a19;
+    }
+
+    .download-storybook {
+        background-color: #9C27B0; 
+        color: white;
+    }
+
+    .download-storybook:hover {
+        background-color: #8e24aa;
+    }
+
+    .psychobot-button {
+        background-color: #008CBA; 
+        color: white;
+    }
+
+    .psychobot-button:hover {
+        background-color: #007bb5;
+    }
+
+    button:active {
+        transform: scale(0.98); 
+    }
+
+    .rights {
+color: grey;
+font-weight: bold;
+font-size: 18px;
+letter-spacing: 1px;
+}
+
+.section {
+padding: 50px;
+text-align: center;
+}
+
+
+.chiatura {
+        background-color: yellowgreen; 
+        color: white;
+    }
+
+    .psychobot-button:hover {
+        background-color: rgb(191, 191, 13);
+    }
+</style>
+</main>
+
+{% endblock %}
+

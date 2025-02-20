@@ -1,0 +1,391 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    .chat-container {
+        max-width: 900px;
+        margin: 50px auto;
+        background-color: #fff;
+        padding: 30px;
+        border-radius: 20px;
+        box-shadow: 0 12px 24px rgba(0, 0, 0, .1);
+        border: 2px solid #f1f1f1;
+    }
+    .chat-box {
+        height: 400px;
+        overflow-y: scroll;
+        border: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: inset 0 0 15px rgba(0, 0, 0, .1);
+    }
+    .chat-message {
+        margin-bottom: 15px;
+    }
+    .user-message {
+        text-align: right;
+    }
+    .bot-message {
+        text-align: left;
+    }
+    .input-group {
+        margin-top: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .message-input {
+        border-radius: 30px;
+        border: 2px solid #ddd;
+        padding: 12px 20px;
+        width: 80%;
+        margin-right: 10px;
+        font-size: 16px;
+        box-shadow: inset 0 0 10px rgba(0, 0, 0, .1);
+    }
+    .send-button {
+        border-radius: 30px;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        padding: 12px 25px;
+        font-size: 16px;
+        transition: background-color .3s ease;
+    }
+    .send-button:hover {
+        background-color: #0056b3;
+    }
+    .emoji-button {
+        background: 0 0;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+    }
+    .chatbot-header {
+        text-align: center;
+        margin-bottom: 30px;
+        color: #333;
+        font-size: 28px;
+        font-weight: 700;
+    }
+    .chat-message p {
+        border-radius: 20px;
+        padding: 12px;
+        max-width: 65%;
+        display: inline-block;
+    }
+    .user-message p {
+        background-color: #f1f1f1;
+        color: #333;
+        border-radius: 20px 20px 0 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, .1);
+    }
+    .bot-message p {
+        background-color: #007bff;
+        color: #fff;
+        border-radius: 20px 20px 20px 0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, .1);
+    }
+    .emoji-picker {
+        position: absolute;
+        display: none;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        padding: 12px;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        max-width: 300px;
+        z-index: 1000;
+        font-size: 16px;
+        transition: all 0.3s ease;
+    }
+
+    .emoji-picker.show {
+        display: block;
+    }
+
+    .emoji {
+        margin: 5px;
+        padding: 8px;
+        border-radius: 50%;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    .emoji:hover {
+        background-color: #e6e6e6;
+    }
+
+    .loading {
+        font-size: 18px;
+        color: #007bff;
+    }
+
+    .bot-message {
+        display: flex;
+        align-items: center;
+    }
+
+    .bot-image {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        margin-right: 10px;
+    }
+</style>
+{% if current_user.is_authenticated %}
+<div class="chat-container">
+    <h2 class="chatbot-header">საუბარი შოთა რუსთაველთან</h2>
+    <div class="chat-box" id="chatBox"></div>
+    <div class="input-group">
+        <input type="text" class="form-control message-input" id="userMessage" placeholder="Type a message...">
+        <div class="button-group">
+            <button class="btn send-button" id="sendMessage">📨</button>
+            <button class="emoji-button" id="emojiButton">😊</button>
+            <button class="btn btn-danger" id="clearChatButton">🗑️</button>
+            <button class="btn btn-info" id="downloadChatButton">📥</button>
+            <input type="file" id="fileInput" class="form-control" style="display: none;"/>
+            <button class="btn btn-success" id="uploadButton">📎</button>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-warning text-center" role="alert">
+    გთხოვთ გაიაროთ ავტორიზაცია ჩატის სანახავად.
+</div>
+{% endif %}
+
+
+
+                    <div class="emoji-picker" id="emojiPicker">
+<span class="emoji" onclick='addEmoji("😀")'>😀</span>
+<span class="emoji" onclick='addEmoji("🎉")'>🎉</span>
+<span class="emoji" onclick='addEmoji("🚀")'>🚀</span>
+<span class="emoji" onclick='addEmoji("❤️")'>❤️</span>
+<span class="emoji" onclick='addEmoji("🐶")'>🐶</span>
+<span class="emoji" onclick='addEmoji("🍕")'>🍕</span>
+<span class="emoji" onclick='addEmoji("🎶")'>🎶</span>
+<span class="emoji" onclick='addEmoji("📚")'>📚</span>
+<span class="emoji" onclick='addEmoji("💡")'>💡</span>
+<span class="emoji" onclick='addEmoji("🎨")'>🎨</span>
+<span class="emoji" onclick='addEmoji("🔥")'>🔥</span>
+<span class="emoji" onclick='addEmoji("🍎")'>🍎</span>
+<span class="emoji" onclick='addEmoji("⚽")'>⚽</span>
+<span class="emoji" onclick='addEmoji("🌍")'>🌍</span>
+<span class="emoji" onclick='addEmoji("🎈")'>🎈</span>
+<span class="emoji" onclick='addEmoji("✨")'>✨</span>
+<span class="emoji" onclick='addEmoji("📷")'>📷</span>
+<span class="emoji" onclick='addEmoji("🏡")'>🏡</span>
+<span class="emoji" onclick='addEmoji("🎁")'>🎁</span>
+<span class="emoji" onclick='addEmoji("🌻")'>🌻</span>
+<span class="emoji" onclick='addEmoji("🎵")'>🎵</span>
+<span class="emoji" onclick='addEmoji("✈️")'>✈️</span>
+<span class="emoji" onclick='addEmoji("💻")'>💻</span>
+<span class="emoji" onclick='addEmoji("💪")'>💪</span>
+<span class="emoji" onclick='addEmoji("🏆")'>🏆</span>
+<span class="emoji" onclick='addEmoji("🎮")'>🎮</span>
+<span class="emoji" onclick='addEmoji("🍩")'>🍩</span>
+<span class="emoji" onclick='addEmoji("🚴")'>🚴</span>
+<span class="emoji" onclick='addEmoji("🎤")'>🎤</span>
+<span class="emoji" onclick='addEmoji("👗")'>👗</span>
+<span class="emoji" onclick='addEmoji("🎯")'>🎯</span>
+<span class="emoji" onclick='addEmoji("📱")'>📱</span>
+<span class="emoji" onclick='addEmoji("📝")'>📝</span>
+<span class="emoji" onclick='addEmoji("🔧")'>🔧</span>
+<span class="emoji" onclick='addEmoji("🎓")'>🎓</span>
+<span class="emoji" onclick='addEmoji("💐")'>💐</span>
+<span class="emoji" onclick='addEmoji("🎹")'>🎹</span>
+<span class="emoji" onclick='addEmoji("💳")'>💳</span>
+</div>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const sendMessageButton = document.getElementById("sendMessage");
+const messageInput = document.getElementById("userMessage");
+const chatBox = document.getElementById("chatBox");
+const emojiButton = document.getElementById("emojiButton");
+const emojiPicker = document.getElementById("emojiPicker");
+const fileInput = document.getElementById("fileInput");
+const uploadButton = document.getElementById("uploadButton");
+const clearChatButton = document.getElementById("clearChatButton");
+const downloadChatButton = document.getElementById("downloadChatButton");
+
+function displayMessage(message, sender) {
+    const messageElement = document.createElement("div");
+    messageElement.classList.add("chat-message");
+
+    const messageText = document.createElement("p");
+    messageText.textContent = message;
+
+    const messageTime = document.createElement("span");
+    messageTime.classList.add("message-time");
+    messageTime.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    if (sender === "user") {
+        messageElement.classList.add("user-message");
+    } else {
+        messageElement.classList.add("bot-message");
+
+        const botImage = document.createElement("img");
+        botImage.src = "data:image/jpeg;base64,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";
+        botImage.alt = "Bot Image";
+        botImage.classList.add("bot-image");
+
+        messageElement.appendChild(botImage);
+    }
+
+    messageElement.appendChild(messageText);
+    messageElement.appendChild(messageTime);
+    chatBox.appendChild(messageElement);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+function saveChatHistory() {
+    const messages = [];
+    const messageElements = chatBox.getElementsByClassName("chat-message");
+    for (const messageElement of messageElements) {
+        const messageText = messageElement.querySelector("p").textContent;
+        messages.push(messageText);
+    }
+    localStorage.setItem("chatHistory", JSON.stringify(messages));
+}
+
+function loadChatHistory() {
+    const storedHistory = localStorage.getItem("chatHistory");
+    if (storedHistory) {
+        const messages = JSON.parse(storedHistory);
+        messages.forEach((message, index) => {
+            const sender = index % 2 === 0 ? "user" : "bot";
+            displayMessage(message, sender);
+        });
+    }
+}
+
+uploadButton.addEventListener("click", function () {
+    fileInput.click();
+});
+
+fileInput.addEventListener("change", function (event) {
+    const file = event.target.files[0];
+    if (file) {
+        displayMessage(`File uploaded: ${file.name}`, "user");
+
+        setTimeout(() => {
+            displayMessage("სამწუხაროდ არ ვიცი ფაილების კითხვა, მაგრამ მალე შევიძენ ამ ფუნქციას ❤️!", "bot");
+            saveChatHistory();
+        }, 500);
+    }
+});
+
+messageInput.addEventListener("keydown", function (event) {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        sendMessage();
+    }
+});
+
+sendMessageButton.addEventListener("click", function () {
+    sendMessage();
+});
+
+function sendMessage() {
+    const userMessage = messageInput.value.trim();
+    if (userMessage === "") return;
+
+    displayMessage(userMessage, "user");
+    messageInput.value = "";
+    saveChatHistory();
+
+    let botMessage = "";
+if (userMessage.toLowerCase() === "გამარჯობა" || userMessage.toLowerCase() === "სალამი" || userMessage.toLowerCase() === "ბარო" || userMessage.toLowerCase() === "ხელი") {
+botMessage = "გამარჯობა! რით შემიძლია დაგეხმაროთ?";
+} else if (userMessage.toLowerCase() === "მადლობა") {
+botMessage = "არაფრის! ჩემთვის დიდი პატივია თუ დაგეხმარეთ ❤️";
+} else if (userMessage.toLowerCase() === "ვინ არის ავთანდილი?") {
+botMessage = "ავთანდილ იყო სპაპსპეტი ძე ამირსპასალარისა, საროსა მჯობდნი ნაზარდი, მსგავსნი მზისა და მთვარისა, ჯერთ უწვერული, სადარო ბროლ-მინა საცნობარისა"
+} else if (userMessage.toLowerCase() === "რა არის სტრესი?") {
+botMessage = "სტრესი არის ორგანიზმის ფიზიკური და ემოციური რეაქცია, რომელიც წარმოიშობა სხვადასხვა გამოწვევებზე ან სირთულეებზე.";
+} else if (userMessage.toLowerCase() === "როგორ მოვერიდოთ სტრესს?") {
+botMessage = "სტრესის თავიდან ასაცილებლად კარგი იქნება ფიზიკური აქტივობა, ჯანსაღი კვება, ძილის რეჟიმის დაცვა და რეგულარული დასვენება.";
+} else if (userMessage.toLowerCase() === "როგორ გავაუმჯობესო ჩემი ემოციური მდგომარეობა?") {
+botMessage = "შესაძლებელია მედიტაციის, პოზიტიური აზროვნების, ჰობიზე დროის დახარჯვის და საჭიროების შემთხვევაში პროფესიონალთან კონსულტაციის დახმარებით.";
+} else if (userMessage.toLowerCase() === "რა არის თვითშეფასება?") {
+botMessage = "თვითშეფასება არის საკუთარი თავისადმი პიროვნული დამოკიდებულება, რაც გულისხმობს, როგორ აღიქვამთ საკუთარ ღირებულებას.";
+} else if (userMessage.toLowerCase() === "რა არის დეპრესია?") {
+botMessage = "დეპრესია არის ემოციური მდგომარეობა, რომელიც ჩნდება ხანგრძლივი სევდას, იმედგაცრუებასა და ენერგიის ნაკლებობასთან ერთად.";
+} else if (userMessage.toLowerCase() === "როგორ გავუმკლავდეთ დეპრესიას?") {
+botMessage = "დეპრესიის მართვისთვის მნიშვნელოვანი ნაბიჯებია ფიზიკური აქტივობა, მედიტაცია, პოზიტიური სოციალური კონტაქტი და საჭიროების შემთხვევაში ფსიქოთერაპია.";
+} else if (userMessage.toLowerCase() === "რა არის სუიციდი?") {
+botMessage = "სუიციდი ადამიანის ცხოვრების დასრულების სცდობაა, რაც ხშირად ემოციურ ტკივილთან და უძლურებასთან დაკავშირებულია.";
+} else if (userMessage.toLowerCase() === "რა არის ემპათია?") {
+botMessage = "ემპათია არის უნარი, იგრძნო და გაიაზრო სხვისი ემოციები და გრძნობები.";
+} else if (userMessage.toLowerCase() === "რა არის სიყვარული?") {
+botMessage = "სიყვარული არის ძლიერი ემოცია, რომელიც ადამიანს აკავშირებს სხვა პიროვნებასთან, დამყარებულ ურთიერთობებსა და ახლობელ ადამიანებთან.";
+} else if (userMessage.toLowerCase() === "რა არის მეგობრობა?") {
+botMessage = "მეგობრობა არის ურთიერთობა, რომელიც შექმნილია ნდობაზე, მხარდაჭერაზე და ურთიერთპატივისცემაზე.";
+} else if (userMessage.toLowerCase() === "ნახვამდის") {
+botMessage = "დროებით ❤️❤️❤️❤️❤️";
+} else if (userMessage.toLowerCase() === "რა არის წარმატება?") {
+botMessage = "წარმატება განსხვავებული კონტექსტით შეიძლება ჰქონდეს მნიშვნელობა, მაგრამ ხშირად ის უკავშირდება მიზნების მიღწევას და პიროვნულ რაზღნულს.";
+} else if (userMessage.toLowerCase() === "რა არის ბალანსი ცხოვრებაში?") {
+botMessage = "ბალანსი ცხოვრებაში გულისხმობს დროსა და ენერგიის განაწილებას სხვადასხვა სფეროებში, როგორიცაა სამუშაო, პირადი ცხოვრება, ჯანმრთელობა და ჰობი.";
+} else if (userMessage.toLowerCase() === "რა არის მედიტაცია?") {
+botMessage = "მედიტაცია არის პრაქტიკა, რომელიც გამოიყენება გონების დასამშვიდებლად და ცნობიერების დასაფარად.";
+} else if (userMessage.toLowerCase() === "hi" || userMessage.toLowerCase() === "hey" || userMessage.toLowerCase() === "hello") {
+botMessage = "Hi, how can I assist you?";
+} else if (userMessage.toLowerCase() === "thank you" || userMessage.toLowerCase() === "thanks") {
+botMessage = "You are welcome! It's very big honour for me to help you ❤️";
+} else if (userMessage.toLowerCase() === "what is psychology?") {
+botMessage = "Psychology is the scientific study of behavior, thought processes, emotions, personality, and memory.";
+} else if (userMessage.toLowerCase() === "what is stress?") {
+botMessage = "Stress is a physical and emotional response of the body to challenges or difficulties.";
+} else if (userMessage.toLowerCase() === "how to avoid stress?") {
+botMessage = "To avoid stress, physical activity, healthy eating, good sleep habits, and regular rest are helpful.";
+} else if (userMessage.toLowerCase() === "what is meditation?") {
+botMessage = "Meditation is a practice used to calm the mind and enhance awareness.";
+} else if (userMessage.match(/[ა-ჰ]/)) {
+botMessage = "სამწუხაროდ თქვენს კითხვაზე პასუხი არ მაქვს, თუმცა გპირდებით, რომ მალე გიპასუხებთ ❤️!";
+} else {
+botMessage = "Sorry, I don't have an answer to that question, but I promise I'll get back to you soon ❤️!";
+}
+
+
+    setTimeout(() => {
+        displayMessage(botMessage, "bot");
+        saveChatHistory();
+    }, 500);
+}
+
+emojiButton.addEventListener("click", function () {
+    emojiPicker.classList.toggle("show");
+});
+
+function addEmoji(emoji) {
+    messageInput.value += emoji;
+    emojiPicker.classList.remove("show");
+}
+
+clearChatButton.addEventListener("click", function () {
+    localStorage.removeItem("chatHistory");
+    chatBox.innerHTML = '';
+});
+
+downloadChatButton.addEventListener("click", function () {
+    const chatHistory = chatBox.innerText;
+    const blob = new Blob([chatHistory], { type: 'text/plain' });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "chat_history.txt";
+    link.click();
+});
+
+window.onload = function() {
+    loadChatHistory();
+};
+</script>
+
+{% endblock %}

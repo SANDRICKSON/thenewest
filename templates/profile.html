@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container mt-5">
+        <div class="card shadow-lg border-light rounded p-4">
+            <h4 class="text-center mb-4" style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #2c3e50; font-weight: 700;">
+                <i class="fas fa-user-circle"></i> <span class="good" style="color: #8e44ad;">მომხმარებლის ინფორმაცია</span>
+            </h4>
+            <div class="list-group">
+                <p class="list-group-item" style="font-size: 1.1rem; font-weight: 500; color: #34495e;">
+                    <i class="fas fa-user" style="color: #3498db;"></i> <strong>სახელი:</strong> <span style="color: #2ecc71;">{{ current_user.username }}</span>
+                </p>
+                <p class="list-group-item d-flex align-items-center" style="font-size: 1.1rem; font-weight: 500; color: #34495e; background-color: #f8f9fa; border-radius: 8px; padding: 10px;">
+                    <i class="fas fa-envelope me-2" style="color: #3498db; font-size: 1.2rem;"></i> 
+                    <strong class="me-2">ელ-ფოსტა:</strong> 
+                    <span style="color: #362ecc;">{{ current_user.email }}</span>
+                </p>
+                
+                <p class="list-group-item" style="font-size: 1.1rem; font-weight: 500; color: #34495e;">
+                    <i class="fas fa-venus-mars" style="color: #e74c3c;"></i> <strong>სქესი:</strong> <span style="color: #e67e22;">{{ current_user.gender }}</span>
+                </p>
+                <p class="list-group-item" style="font-size: 1.1rem; font-weight: 500; color: #34495e;">
+                    <i class="fas fa-birthday-cake" style="color: #f39c12;"></i> <strong>დაბადების თარიღი:</strong> <span style="color: #16a085;">{{ current_user.birthday }}</span>
+                </p>
+                <p class="list-group-item" style="font-size: 1.1rem; font-weight: 500; color: #34495e;">
+                    <i class="fas fa-globe" style="color: #1abc9c;"></i> <strong>ქვეყანა:</strong> <span style="color: #9b59b6;">{{ current_user.country }}</span>
+                </p>
+                <p class="list-group-item" style="font-size: 1.1rem; font-weight: 500; color: #34495e;">
+                    <i class="fas fa-id-badge" style="color: #9b59b6;"></i> <strong>როლი:</strong> 
+                    {% if current_user.username == "sandroqatamadze" %}
+                        <span style="color: #e74c3c;">ადმინისტრატორი</span>
+                    {% else %}
+                        <span style="color: #2ecc71;">სტუმარი</span>
+                    {% endif %}
+                </p>
+            </div>
+            <div class="text-center mt-4">
+                <a href="{{ url_for('settings') }}" class="btn btn-primary">
+                    <i class="fas fa-edit"></i> პროფილის რედაქტირება
+                </a>
+            </div>
+        </div>
+    </div>
+    <style>
+        .list-group-item {
+            font-family: "BPG Classic Medium", sans-serif;
+        }
+        .good {
+            font-family: "BPG Classic Medium", sans-serif;
+        }
+        .btn-primary {
+            font-family: "BPG Classic Medium", sans-serif;
+            background-color: #3498db;
+            border-color: #2980b9;
+            font-size: 1rem;
+            font-weight: 600;
+            padding: 10px 20px;
+            border-radius: 8px;
+        }
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+    </style>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow-lg p-4 bg-light rounded">
+        <h2 class="text-center text-primary">🛡️ უსაფრთხოების პოლიტიკა</h2>
+        <p class="text-muted text-center">გთხოვთ, ყურადღებით გაეცნოთ ჩვენს წესებსა და პირობებს</p>
+        <hr>
+        <p>პირობებზე დათანხმებით თქვენ ეთანხმებით ჩვენს წესებსა და პირობებს:</p>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item">✅ ადმინისტრატორს აქვს უფლება იხილოს თქვენი, როგორც დარეგისტრირებული მომხმარებლის სახელი, დაბადების თარიღი და წარმომავლობის შესახებ.</li>
+            <li class="list-group-item">✅ თქვენი მონაცემები არ გადაეცემა მესამე პირებს თქვენს ნებართვის გარეშე.</li>
+            <li class="list-group-item">✅ თქვენ ვალდებული ხართ, რომ არ გამოიყენოთ შეურაცხმყოფელი, სიძულვილის შემცველი ან ძალადობრივი სიტყვები ჩვენს პლატფორმაზე.</li>
+            <li class="list-group-item text-danger fw-bold">⚠️ ნებისმიერი შეურაცხმყოფელი ან დამამცირებელი კომენტარი ადმინისტრატორის მიერ ანგარიშის გაფრთხილების გარეშე წაშლას გამოიწვევს!</li>
+            <li class="list-group-item">✅ ნებისმიერი უკანონო ქმედება (მაგალითად, ანგარიშის მოტყუებით შექმნა) აკრძალულია.</li>
+            <li class="list-group-item">✅ ჩვენ ვიტოვებთ უფლებას, საჭიროების შემთხვევაში, განვაახლოთ ეს პოლიტიკა გაფრთხილების გარეშე.</li>
+        </ul>
+        <div class="mt-4 text-center">
+            <a href="#" class="btn btn-success px-4">ვეთანხმები</a>
+            <a href="#" class="btn btn-danger px-4">არ ვეთანხმები</a>
+        </div>
+    </div>
+</div>
+<style>
+     h1,h2,p,a,li{
+        font-family: "BPG Classic Medium", sans-serif;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
