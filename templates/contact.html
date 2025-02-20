@@ -8,10 +8,6 @@
             {{ form.hidden_tag() }}
             
             <div class="mb-3">
-                {{ form.email(class="form-control", placeholder=form.email.label.text) }}
-            </div>
-
-            <div class="mb-3">
                 {{ form.message(class="form-control", placeholder=form.message.label.text, disabled=not current_user.is_authenticated) }}
             </div>
 
@@ -29,11 +25,11 @@
 <style>
     label, ::placeholder {
         font-family: "BPG Classic Medium", sans-serif;
-        font-size: 20px;
+            font-size: 20px;
     }
     .btn{
         font-family: "BPG Classic Medium", sans-serif;
-        font-size: 20px;
+            font-size: 20px;
     }
 </style>
 
