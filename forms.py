@@ -24,6 +24,7 @@ class RegisterForm(FlaskForm):
 
 class MessageForm(FlaskForm):
     message = StringField("დაწერეთ მესიჯი")
+    message = TextAreaField('შეტყობინება', validators=[DataRequired()])
     submit = SubmitField("გაგზავნეთ მესიჯი")
 
 class LoginForm(FlaskForm):
