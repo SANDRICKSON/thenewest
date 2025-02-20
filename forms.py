@@ -23,6 +23,7 @@ class RegisterForm(FlaskForm):
 
 
 class MessageForm(FlaskForm):
+    email = StringField('ჩაწერეთ მეილი', validators=[DataRequired(), Email()])
     message = StringField("დაწერეთ მესიჯი")
     submit = SubmitField("გაგზავნეთ მესიჯი")
 
