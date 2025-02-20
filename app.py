@@ -268,11 +268,13 @@ def contact():
         # ელ. ფოსტაზე გაგზავნა
         msg = Message('ახალი შეტყობინება - ვეფხისტყაოსანი',
                       recipients=['vepkhistyaosaniproject@gmail.com'])  # მოათავსე ის მეილი, რომელზეც უნდა მივიდეს შეტყობინება
+        msg.sender = form.email.data  # გამგზავნის ელ. ფოსტა
         msg.body = form.message.data  # შეტყობინება
         mail.send(msg)
         
         print("Message sent!")
     return render_template("contact.html", form=form, title="კონტაქტი - ვეფხისტყაოსანი")
+
 
 @app.route("/author")
 def author():
