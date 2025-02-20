@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container mt-4 text-center">
+        <h1 class="text-danger">🚧 ლიმიტი გადაჭარბებულია! 🚧</h1>
+        <p class="lead">თქვენ ძალიან ბევრი მცდელობა განახორციელეთ. გთხოვთ სცადოთ მოგვიანებით.</p>
+        <p>თუ მიიჩნევთ, რომ ეს არ იყო თქვენი მცდელობა, გთხოვთ მოგვწეროთ <a href="mailto:vepkhistyaosaniproject@gmail.com">vepkhistyaosaniproject@gmail.com</a>.</p>
+        <a class="btn btn-primary mt-3" href="{{ url_for('index') }}">მთავარ გვერდზე დაბრუნება</a>
+    </div>
+
+    <style>
+        h1, h2, p {
+            font-family: "BPG Classic Medium", sans-serif;
+        }
+        h1 {
+            font-weight: bold;
+            font-size: 2.5rem;
+        }
+        p {
+            font-size: 1.1rem;
+        }
+        a {
+            font-size: 1.2rem;
+        }
+    </style>
+{% endblock %}
