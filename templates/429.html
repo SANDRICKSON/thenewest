@@ -1,4 +1,6 @@
-{% extends "base.html" %}
+
+
+  {% extends "base.html" %}
 
 {% block content %}
     <div class="container mt-4 text-center">
@@ -6,6 +8,9 @@
         <p class="lead">თქვენ ძალიან ბევრი მცდელობა განახორციელეთ. გთხოვთ სცადოთ მოგვიანებით.</p>
         <p>თუ მიიჩნევთ, რომ ეს არ იყო თქვენი მცდელობა, გთხოვთ მოგვწეროთ <a href="mailto:vepkhistyaosaniproject@gmail.com">vepkhistyaosaniproject@gmail.com</a>.</p>
         <a class="btn btn-primary mt-3" href="{{ url_for('index') }}">მთავარ გვერდზე დაბრუნება</a>
+        <p class="mt-4">წამზომი: <span id="timer">01:00</span></p>
+
+        <a class="btn btn-primary mt-3" id="redirectButton" href="{{ url_for('login') }}" style="display:none;">ავტორიზაციის  გვერდზე დაბრუნება</a>
     </div>
 
     <style>
@@ -22,5 +27,33 @@
         a {
             font-size: 1.2rem;
         }
+        #timer {
+            font-weight: bold;
+            font-size: 1.5rem;
+            color: #ff4500;
+        }
     </style>
+
+    <script>
+        // წამზომი
+        var countdown = 60;  // 60 წამი
+        var timerElement = document.getElementById('timer');
+        var redirectButton = document.getElementById('redirectButton');
+        
+        var interval = setInterval(function() {
+            var minutes = Math.floor(countdown / 60);
+            var seconds = countdown % 60;
+            seconds = seconds < 10 ? '0' + seconds : seconds;
+            timerElement.textContent = minutes + ":" + seconds;
+            
+            countdown--;
+            
+            if (countdown < 0) {
+                clearInterval(interval);
+                redirectButton.style.display = 'inline-block';  // როდესაც წამზომი ამოიწურა, გადადის ლოგინის გვერდზე
+            }
+        }, 1000);
+    </script>
+
 {% endblock %}
+
