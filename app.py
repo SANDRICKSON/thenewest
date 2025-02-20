@@ -265,15 +265,23 @@ def about():
 def contact():
     form = MessageForm()
     if form.validate_on_submit():
-        # ელ. ფოსტაზე გაგზავნა
-        msg = Message('ახალი შეტყობინება - ვეფხისტყაოსანი',
-                      recipients=['vepkhistyaosaniproject@gmail.com'])  # მოათავსე ის მეილი, რომელზეც უნდა მივიდეს შეტყობინება
-        msg.sender = form.email.data  # გამგზავნის ელ. ფოსტა
-        msg.body = form.message.data  # შეტყობინება
-        mail.send(msg)
-        
-        print("Message sent!")
+        try:
+            # ელ. ფოსტაზე გაგზავნა
+            msg = Message('ახალი შეტყობინება - ვეფხისტყაოსანი',
+                         recipients=['vepkhistyaosaniproject@gmail.com'])
+            msg.sender = current_user.email  # ავტომატურად წამოიღეთ მომხმარებლის ელ. ფოსტა
+            msg.body = form.message.data  # შეტყობინება
+            mail.send(msg)
+
+            print("Message sent!")
+            return render_template("success.html", title="შეტყობინება გაგზავნილია")
+
+        except Exception as e:
+            print(f"Error: {e}")
+            return render_template("contact.html", form=form, title="კონტაქტი - ვეფხისტყაოსანი", error="შეტყობინება ვერ გაიგზავნა. სცადეთ თავიდან.")
+    
     return render_template("contact.html", form=form, title="კონტაქტი - ვეფხისტყაოსანი")
+    
 
 
 @app.route("/author")
