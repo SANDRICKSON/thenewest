@@ -265,7 +265,13 @@ def about():
 def contact():
     form = MessageForm()
     if form.validate_on_submit():
-        print(form.message.data)
+        # ელ. ფოსტაზე გაგზავნა
+        msg = Message('New Contact Form Submission',
+                      recipients=['vepkhistyaosaniproject@gmail.com'])  # მოათავსე ის მეილი, რომელზეც უნდა მივიდეს შეტყობინება
+        msg.body = form.message.data  # შეტყობინება
+        mail.send(msg)
+        
+        print("Message sent!")
     return render_template("contact.html", form=form, title="კონტაქტი - ვეფხისტყაოსანი")
 
 @app.route("/author")
