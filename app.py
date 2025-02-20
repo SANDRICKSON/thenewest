@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for, flash, request
+from flask import render_template, redirect, url_for, flash, request,abort
 from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.security import check_password_hash, generate_password_hash
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadTimeSignature
@@ -23,7 +23,10 @@ def add_security_headers(response):
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"  # Referer header-ის კონტროლი
     return response
 
-
+@app.before_request
+def limit_remote_addr():
+    if request.remote_addr not in ['trusted_ip1', 'trusted_ip2']:
+        abort(403)
 
 @app.errorhandler(429)
 def too_many_requests(error):
