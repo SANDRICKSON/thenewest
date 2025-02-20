@@ -7,11 +7,18 @@ from flask_mail import Message
 from extensions import app, mail,db
 from models import User
 from forms import RegisterForm, MessageForm, LoginForm, UpdateForm, ForgotPasswordForm,ResetPasswordForm, FormUpdateForm
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
+limiter = Limiter(get_remote_address, app=app, default_limits=["5 per minute"])  # 5 მცდელობა 1 წუთში
 
 
 # 📌 Email ვერიფიკაციის ტოკენის გენერაცია
 s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
+@app.errorhandler(429)
+def too_many_requests(error):
+    return render_template('429.html', title="მოთხოვნების ლიმიტი გადაჭარბებულია"), 429
 
 
 @app.after_request
@@ -267,18 +274,16 @@ def author():
 
 # 📌 ავტორიზაციის როუტი - მხოლოდ ვერიფიცირებული მომხმარებლებისთვის
 @app.route("/login", methods=["GET", "POST"])
+@limiter.limit("3 per minute")  # 3 მცდელობა 1 წუთში
 def login():
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
         if user and check_password_hash(user.password, form.password.data):
-            if not user.is_verified:
-                send_verification_email(user.email)  # ხელახალი გაგზავნა
-                flash("თქვენს ელ-ფოსტაზე ვერიფიკაციის ბმული გაგზავნილია!", "warning")
-                return redirect(url_for('login'))
             login_user(user)
-            return redirect(url_for("index")) 
+            return redirect(url_for("index"))
     return render_template("login.html", form=form, title="ავტორიზაცია - ვეფხისტყაოსანი")
+
 
 
 @app.route("/poem")
