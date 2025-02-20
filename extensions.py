@@ -14,7 +14,7 @@ app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = 'vepkhistyaosaniproject@gmail.com'
 app.config['MAIL_PASSWORD'] = 'vymi jkng kwze aphz'
 app.config["MAIL_DEFAULT_SENDER"] = 'vepkhistyaosaniproject@gmail.com'
-app.config['SESSION_COOKIE_SAMESITE'] = 'Strict'
+
 
 db=SQLAlchemy(app)
 login_manager = LoginManager(app)
