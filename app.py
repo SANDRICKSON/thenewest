@@ -24,32 +24,67 @@ def add_security_headers(response):
 
 
 
+def send_account_update_email(user, changed_fields):
+    """აგზავნის ელფოსტას, როდესაც მომხმარებელი ცვლის მონაცემებს."""
+    subject = "ანგარიშის მონაცემები შეიცვალა"
+    changes = ", ".join(changed_fields)  # რა შეიცვალა კონკრეტულად
+    message_body = f"""
+    ძვირფასო {user.username}!
+
+    თქვენს ანგარიშზე შეიცვალა შემდეგი მონაცემები: {changes}.
+    თუ ეს თქვენ არ ყოფილხართ და გაქვთ ეჭვი, რომ თაღლითური შემოტევა იყო, გთხოვთ, მოგვწერეთ: vepkhistyaosaniproject@gmail.com
+
+    მადლობა ყურადღებისთვის!
+    """
+
+    msg = Message(subject=subject, recipients=[user.email], body=message_body)
+    mail.send(msg)
+
+
 @app.route("/settings", methods=["GET", "POST"])
 @login_required
 def settings():
     form = FormUpdateForm(obj=current_user)  # ფორმის შევსება მიმდინარე მომხმარებლის მონაცემებით
+    changed_fields = []  # შევინახოთ რა შეიცვალა
 
     if form.validate_on_submit():
-        current_user.username = form.username.data
-        current_user.email = form.email.data
-        current_user.birthday = form.birthday.data
-        
-            
-        current_user.password=form.password.data
-        
-        current_user.country=form.country.data
-        current_user.gender=form.gender.data
-            
+        # შევადაროთ ძველი და ახალი მნიშვნელობები
+        if current_user.username != form.username.data:
+            changed_fields.append("მომხმარებლის სახელი")
+            current_user.username = form.username.data
+
+        if current_user.email != form.email.data:
+            changed_fields.append("ელ.ფოსტა")
+            current_user.email = form.email.data
+
+        if current_user.birthday != form.birthday.data:
+            changed_fields.append("დაბადების თარიღი")
+            current_user.birthday = form.birthday.data
+
+        if current_user.country != form.country.data:
+            changed_fields.append("ქვეყანა")
+            current_user.country = form.country.data
+
+        if current_user.gender != form.gender.data:
+            changed_fields.append("სქესი")
+            current_user.gender = form.gender.data
 
         # თუ მომხმარებელმა პაროლის შეცვლა გადაწყვიტა
         if form.password.data:
+            changed_fields.append("პაროლი")
             current_user.password = generate_password_hash(form.password.data)
 
         db.session.commit()
+
+        # თუ რაიმე შეიცვალა, ვუგზავნით ელფოსტას
+        if changed_fields:
+            send_account_update_email(current_user, changed_fields)
+
         flash("მონაცემები წარმატებით განახლდა!", "success")
         return redirect(url_for("profile"))
 
     return render_template("settings.html", form=form, title="პარამეტრები - ვეფხისტყაოსანი")
+
 
 # 📌 პაროლის აღდგენის როუტი
 @app.route('/forgot_password', methods=['GET', 'POST'])
