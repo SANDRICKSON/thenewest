@@ -14,6 +14,8 @@ from forms import RegisterForm, MessageForm, LoginForm, UpdateForm, ForgotPasswo
 # 📌 Email ვერიფიკაციის ტოკენის გენერაცია
 s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
+
+
 limiter = Limiter(get_remote_address, app=app, default_limits=["5 per minute"])
 
 @app.after_request
