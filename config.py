@@ -11,3 +11,7 @@ def init_app(app):
     app.config['MAIL_DEFAULT_SENDER'] = 'vepkhistyaosaniproject@gmail.com'
 
     mail.init_app(app)
+
+
+GOOGLE_CLIENT_ID = "501759979349-up2l59bd01tg6qh38fctmdr27p8l3qse.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET = "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"
