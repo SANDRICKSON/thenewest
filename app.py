@@ -289,16 +289,29 @@ def author():
     return render_template("author.html", title="ავტორის შესახებ - ვეფხისტყაოსანი")
 
 # 📌 ავტორიზაციის როუტი - მხოლოდ ვერიფიცირებული მომხმარებლებისთვის
+
+
 @app.route("/login", methods=["GET", "POST"])
-@limiter.limit("5 per minute")  # 3 მცდელობა 1 წუთში
+@limiter.limit("5 per minute")  # 5 მცდელობა 1 წუთში
 def login():
     form = LoginForm()
+    
     if form.validate_on_submit():
-        user = User.query.filter_by(username=form.username.data).first()
-        if user and check_password_hash(user.password, form.password.data):
+        identifier = form.identifier.data  # შეიძლება იყოს იუზერნეიმი ან ელფოსტა
+        password = form.password.data
+        
+        # ვეძებთ მომხმარებელს იუზერნეიმით ან ელფოსტით
+        user = User.query.filter((User.username == identifier) | (User.email == identifier)).first()
+        
+        if user and check_password_hash(user.password, password):
             login_user(user)
+            flash("წარმატებული ავტორიზაცია!", "success")
             return redirect(url_for("index"))
+        else:
+            flash("❌ მომხმარებლის სახელი, ელფოსტა ან პაროლი არასწორია!", "danger")
+
     return render_template("login.html", form=form, title="ავტორიზაცია - ვეფხისტყაოსანი")
+
 
 
 
