@@ -6,6 +6,7 @@ from itsdangerous import URLSafeTimedSerializer
 from flask_mail import Message
 from extensions import app, mail,db
 from models import User
+from flask_oauthlib.client import OAuth
 from forms import RegisterForm, MessageForm, LoginForm, UpdateForm, ForgotPasswordForm,ResetPasswordForm, FormUpdateForm
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
