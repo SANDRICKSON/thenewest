@@ -9,4 +9,4 @@ Flask-Mail
 itsdangerous
 Flask-Limiter
 Flask-Dance
-authlib
+authlib==1.0.0
