@@ -9,6 +9,63 @@ from models import User
 from forms import RegisterForm, MessageForm, LoginForm, UpdateForm, ForgotPasswordForm,ResetPasswordForm, FormUpdateForm
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_oauthlib.client import OAuth
+
+oauth = OAuth(app)
+google = oauth.remote_app(
+    'google',
+    consumer_key=app.config['GOOGLE_CLIENT_ID'],
+    consumer_secret=app.config['GOOGLE_CLIENT_SECRET'],
+    request_token_params={
+        'scope': 'email',
+    },
+    base_url='https://www.googleapis.com/oauth2/v1/',
+    request_token_url=None,
+    access_token_method='POST',
+    access_token_url='https://accounts.google.com/o/oauth2/token',
+    authorize_url='https://accounts.google.com/o/oauth2/auth',
+)
+
+
+
+@app.route('/login/google')
+def google_login():
+    return google.authorize(callback=url_for('google_authorized', _external=True))
+
+@app.route('/google_login/authorized')
+def google_authorized():
+    response = google.authorized_response()
+    if response is None or response.get('access_token') is None:
+        flash('Google authorization failed. Please try again.', 'danger')
+        return redirect(url_for('index'))
+
+    session['google_token'] = (response['access_token'], '')
+    user_info = google.get('userinfo')
+    user_data = user_info.data
+    username = user_data['name']
+    email = user_data['email']
+    
+    # შექმენით/იპოვეთ მომხმარებელი და შესრულეთ ლოგინი
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        user = User(username=username, email=email)
+        db.session.add(user)
+        db.session.commit()
+
+    login_user(user)
+    flash(f'Hello, {username}!', 'success')
+    return redirect(url_for('profile'))
+
+
+
+@google.tokengetter
+def get_google_oauth_token():
+    return session.get('google_token')
+
+
+app.config['GOOGLE_CLIENT_ID'] = '501759979349-up2l59bd01tg6qh38fctmdr27p8l3qse.apps.googleusercontent.com'
+app.config['GOOGLE_CLIENT_SECRET'] = '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'
+
 
 limiter = Limiter(get_remote_address, app=app, default_limits=["5 per minute"])  # 5 მცდელობა 1 წუთში
 
