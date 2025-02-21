@@ -8,7 +8,7 @@
 
             <!-- მომხმარებლის ველი (შეიძლება იყოს იუზერნეიმი ან ელფოსტა) -->
             <div class="row mb-3">
-                <label for="{{ form.identifier.id }}" class="col-sm-2 col-form-label fw-bold">მომხმარებელი / ელფოსტა</label>
+                <label for="{{ form.identifier.id }}" class="col-sm-2 col-form-label fw-bold">შეიყვანეთ იუზერნეიმი/ელფოსტა</label>
                 <div class="col-sm-10">
                     {{ form.identifier(class="form-control rounded-pill shadow-sm {% if form.identifier.errors %}is-invalid{% endif %}", placeholder="შეიყვანეთ იუზერნეიმი ან ელფოსტა") }}
                     {% if form.identifier.errors %}
@@ -23,7 +23,7 @@
 
             <!-- პაროლის ველი -->
             <div class="row mb-3">
-                <label for="{{ form.password.id }}" class="col-sm-2 col-form-label fw-bold">პაროლი</label>
+                <label for="{{ form.password.id }}" class="col-sm-2 col-form-label fw-bold">შეიყვანეთ პაროლი</label>
                 <div class="col-sm-10">
                     <div class="input-group">
                         {{ form.password(class="form-control rounded-pill shadow-sm {% if form.password.errors %}is-invalid{% endif %}", placeholder="შეიყვანეთ პაროლი", id="password") }}
