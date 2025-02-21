@@ -9,7 +9,9 @@ from models import User
 from forms import RegisterForm, MessageForm, LoginForm, UpdateForm, ForgotPasswordForm,ResetPasswordForm, FormUpdateForm
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from flask_oauthlib.client import OAuth
+# Flask-OAuthlib-ის ჩანაცვლება Authlib-ით
+from authlib.integrations.flask_client import OAuth
+
 
 oauth = OAuth(app)
 google = oauth.remote_app(
