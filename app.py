@@ -1,26 +1,22 @@
-from flask import render_template, redirect, url_for, flash, request
+from flask import render_template, redirect, url_for, flash, request, session
 from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.security import check_password_hash, generate_password_hash
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadTimeSignature
-from itsdangerous import URLSafeTimedSerializer
 from flask_mail import Message
-from extensions import app, mail,db
+from extensions import app, mail, db
 from models import User
-from forms import RegisterForm, MessageForm, LoginForm, UpdateForm, ForgotPasswordForm,ResetPasswordForm, FormUpdateForm
+from forms import RegisterForm, MessageForm, LoginForm, UpdateForm, ForgotPasswordForm, ResetPasswordForm, FormUpdateForm
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-# Flask-OAuthlib-ის ჩანაცვლება Authlib-ით
 from authlib.integrations.flask_client import OAuth
 
-
+# Initialize OAuth for Google login
 oauth = OAuth(app)
 google = oauth.remote_app(
     'google',
     consumer_key=app.config['GOOGLE_CLIENT_ID'],
     consumer_secret=app.config['GOOGLE_CLIENT_SECRET'],
-    request_token_params={
-        'scope': 'email',
-    },
+    request_token_params={'scope': 'email'},
     base_url='https://www.googleapis.com/oauth2/v1/',
     request_token_url=None,
     access_token_method='POST',
@@ -28,8 +24,16 @@ google = oauth.remote_app(
     authorize_url='https://accounts.google.com/o/oauth2/auth',
 )
 
+# Initialize Flask-Limiter
+limiter = Limiter(get_remote_address, app=app, default_limits=["5 per minute"])
 
+# Initialize URLSafeTimedSerializer for email verification
+s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
+app.config['GOOGLE_CLIENT_ID'] = '501759979349-up2l59bd01tg6qh38fctmdr27p8l3qse.apps.googleusercontent.com'  # ჩაანაცვლე ეს შენი რეალური კლიენტ აიდით
+app.config['GOOGLE_CLIENT_SECRET'] = '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'  # ჩაანაცვლე ეს შენი რეალური სეკრეტ აიდით
+
+# Google OAuth Routes
 @app.route('/login/google')
 def google_login():
     return google.authorize(callback=url_for('google_authorized', _external=True))
@@ -47,7 +51,7 @@ def google_authorized():
     username = user_data['name']
     email = user_data['email']
     
-    # შექმენით/იპოვეთ მომხმარებელი და შესრულეთ ლოგინი
+    # Check or create user
     user = User.query.filter_by(email=email).first()
     if not user:
         user = User(username=username, email=email)
@@ -58,101 +62,103 @@ def google_authorized():
     flash(f'Hello, {username}!', 'success')
     return redirect(url_for('profile'))
 
-
-
 @google.tokengetter
 def get_google_oauth_token():
     return session.get('google_token')
 
 
-app.config['GOOGLE_CLIENT_ID'] = '501759979349-up2l59bd01tg6qh38fctmdr27p8l3qse.apps.googleusercontent.com'
-app.config['GOOGLE_CLIENT_SECRET'] = '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'
-
-
-limiter = Limiter(get_remote_address, app=app, default_limits=["5 per minute"])  # 5 მცდელობა 1 წუთში
-
-
-# 📌 Email ვერიფიკაციის ტოკენის გენერაცია
-s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
-
+# Error Handlers
 @app.errorhandler(429)
 def too_many_requests(error):
-    return render_template('429.html', title="მოთხოვნების ლიმიტი გადაჭარბებულია"), 429
+    return render_template('429.html', title="Too Many Requests"), 429
+
+@app.errorhandler(401)
+def unauthorized(error):
+    return render_template('401.html', title="Unauthorized"), 401
+
+@app.errorhandler(500)
+def internal_server_error(error):
+    return render_template('500.html', title="Internal Server Error"), 500
+
+@app.errorhandler(502)
+def bad_gateway(error):
+    return render_template('502.html', title="Bad Gateway"), 502
+
+@app.errorhandler(503)
+def service_unavailable(error):
+    return render_template('503.html', title="Service Unavailable"), 503
+
+@app.errorhandler(504)
+def gateway_timeout(error):
+    return render_template('504.html', title="Gateway Timeout"), 504
+
+@app.errorhandler(404)
+def page_not_found(error):
+    return render_template('404.html', title="Page Not Found"), 404
 
 
+# Security Headers
 @app.after_request
 def add_security_headers(response):
-    response.headers["X-Frame-Options"] = "DENY"  # ბლოკავს ჩასმას სხვა საიტებზე
-    response.headers["X-Content-Type-Options"] = "nosniff"  # MIME type spoofing-ისგან დაცვა
-    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"  # Referer header-ის კონტროლი
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
     return response
 
 
-
-
-def send_account_update_email(user, changed_fields):
-    """აგზავნის ელფოსტას, როდესაც მომხმარებელი ცვლის მონაცემებს."""
-    subject = "ანგარიშის მონაცემები შეიცვალა"
-    changes = ", ".join(changed_fields)  # რა შეიცვალა კონკრეტულად
-    message_body = f"""
-    ძვირფასო {user.username}!
-
-    თქვენს ანგარიშზე შეიცვალა შემდეგი მონაცემები: {changes}.
-    თუ ეს თქვენ არ ყოფილხართ და გაქვთ ეჭვი, რომ თაღლითური შემოტევა იყო, გთხოვთ, მოგვწერეთ: vepkhistyaosaniproject@gmail.com
-
-    მადლობა ყურადღებისთვის!
-    """
-
-    msg = Message(subject=subject, recipients=[user.email], body=message_body)
-    mail.send(msg)
-
-
+# Route to display settings page
 @app.route("/settings", methods=["GET", "POST"])
 @login_required
 def settings():
-    form = FormUpdateForm(obj=current_user)  # ფორმის შევსება მიმდინარე მომხმარებლის მონაცემებით
-    changed_fields = []  # შევინახოთ რა შეიცვალა
+    form = FormUpdateForm(obj=current_user)
+    changed_fields = []
 
     if form.validate_on_submit():
-        # შევადაროთ ძველი და ახალი მნიშვნელობები
         if current_user.username != form.username.data:
-            changed_fields.append("მომხმარებლის სახელი")
+            changed_fields.append("Username")
             current_user.username = form.username.data
 
         if current_user.email != form.email.data:
-            changed_fields.append("ელ.ფოსტა")
+            changed_fields.append("Email")
             current_user.email = form.email.data
 
         if current_user.birthday != form.birthday.data:
-            changed_fields.append("დაბადების თარიღი")
+            changed_fields.append("Birthday")
             current_user.birthday = form.birthday.data
 
         if current_user.country != form.country.data:
-            changed_fields.append("ქვეყანა")
+            changed_fields.append("Country")
             current_user.country = form.country.data
 
         if current_user.gender != form.gender.data:
-            changed_fields.append("სქესი")
+            changed_fields.append("Gender")
             current_user.gender = form.gender.data
 
-        # თუ მომხმარებელმა პაროლის შეცვლა გადაწყვიტა
         if form.password.data:
-            changed_fields.append("პაროლი")
+            changed_fields.append("Password")
             current_user.password = generate_password_hash(form.password.data)
 
         db.session.commit()
 
-        # თუ რაიმე შეიცვალა, ვუგზავნით ელფოსტას
         if changed_fields:
             send_account_update_email(current_user, changed_fields)
 
-        flash("მონაცემები წარმატებით განახლდა!", "success")
+        flash("Account updated successfully!", "success")
         return redirect(url_for("profile"))
 
-    return render_template("settings.html", form=form, title="პარამეტრები - ვეფხისტყაოსანი")
+    return render_template("settings.html", form=form, title="Settings")
 
 
-# 📌 პაროლის აღდგენის როუტი
+# Send account update email
+def send_account_update_email(user, changed_fields):
+    subject = "Account Data Updated"
+    changes = ", ".join(changed_fields)
+    message_body = f"Dear {user.username},\n\nThe following information has been updated: {changes}. If this was not you, please contact us immediately.\n\nThank you!"
+    msg = Message(subject=subject, recipients=[user.email], body=message_body)
+    mail.send(msg)
+
+
+# Forgot Password Flow
 @app.route('/forgot_password', methods=['GET', 'POST'])
 def forgot_password():
     form = ForgotPasswordForm()
@@ -161,87 +167,50 @@ def forgot_password():
         if user:
             token = s.dumps(user.email, salt='password-reset')
             reset_url = url_for('reset_password', token=token, _external=True)
-            msg = Message('პაროლის აღდგენა', recipients=[user.email])
-            msg.body = f"პაროლის აღსადგენად დააჭირეთ ამ ბმულს: {reset_url}"
+            msg = Message('Password Reset', recipients=[user.email])
+            msg.body = f"Click here to reset your password: {reset_url}"
             mail.send(msg)
-            flash('ელ.ფოსტა გაგზავნილია!', 'success')
+            flash('Password reset email sent!', 'success')
             return redirect(url_for('login'))
         else:
-            flash('ამ ელ.ფოსტით მომხმარებელი არ მოიძებნა.', 'danger')
-    return render_template('forgot_password.html', form=form, title="პაროლის აღდგენა - ვეფხისტყაოსანი")
+            flash('No account found with that email address.', 'danger')
+    return render_template('forgot_password.html', form=form, title="Forgot Password")
 
-# 📌 პაროლის განახლების როუტი
+
+# Reset Password Flow
 @app.route('/reset_password/<token>', methods=['GET', 'POST'])
 def reset_password(token):
     try:
-        email = s.loads(token, salt='password-reset', max_age=3600)  # 1 საათი
+        email = s.loads(token, salt='password-reset', max_age=3600)
     except (SignatureExpired, BadTimeSignature):
-        flash('ბმული არასწორია ან ვადა გაუვიდა!', 'danger')
+        flash('The link is invalid or has expired!', 'danger')
         return redirect(url_for('forgot_password'))
 
     user = User.query.filter_by(email=email).first()
     if not user:
-        flash('მომხმარებელი ვერ მოიძებნა!', 'danger')
+        flash('User not found!', 'danger')
         return redirect(url_for('forgot_password'))
 
     form = ResetPasswordForm()
     if form.validate_on_submit():
         user.password = generate_password_hash(form.password.data)
         db.session.commit()
-        flash('პაროლი წარმატებით განახლდა!', 'success')
+        flash('Password updated successfully!', 'success')
         return redirect(url_for('login'))
 
     return render_template('reset_password.html', form=form)
 
-@app.errorhandler(401)
-def unauthorized(error):
-    return render_template('401.html', title="არაავტორიზირებული მომხმარებელი - ვეფხისტყაოსანი"), 401
 
-@app.errorhandler(500)
-def unauthorized(error):
-    return render_template('500.html', title="სერვერის შეცდომა - ვეფხისტყაოსანი"), 500
-
-# 502 - Bad Gateway
-@app.errorhandler(502)
-def bad_gateway(error):
-    return render_template('502.html',title="ცუდი კარიბჭე - ვეფხისტყაოსანი"), 502
-
-# 503 - Service Unavailable
-@app.errorhandler(503)
-def service_unavailable(error):
-    return render_template('503.html', title="მიუწვდომელი სერვისი - ვეფხისტყაოსანი"), 503
-
-# 504 - Gateway Timeout
-@app.errorhandler(504)
-def gateway_timeout(error):
-    return render_template('504.html', title="სესიის დრო ამოიწურა - ვეფხისტყაოსანი"), 504
-
-@app.route("/403")
-@login_required
-def noadmin():
-    return render_template("403.html", title="აკრძალული წვდომა - ვეფხისტყაოსანი")
-
-
-@app.errorhandler(404)
-def page_not_found(error):
-    return render_template('404.html', title="გვერდი არ მოიძებნა - ვეფხისტყაოსანი"), 404
-
+# Email Verification Functions
 def send_verification_email(user_email):
     token = generate_verification_token(user_email)
     confirm_url = url_for('confirm_email', token=token, _external=True)
     subject = "Email Verification"
-    message_body = f"მოგესალმებით, {user.username}! 😊\n\nმადლობა, რომ დაინტერესდით ჩემი პროექტით. თქვენი ანგარიში წარმატებით შეიქმნა! გთხოვთ, გაიარეთ ვერიფიკაცია შემდეგ ბმულზე:\n\n{confirm_url}\n\nმადლობა ყურადღებისთვის! 🙌"
+    message_body = f"Please click the link to verify your email: {confirm_url}"
 
-
-
-    msg = Message(
-        subject=subject,
-        recipients=[user_email],
-        body=message_body,
-        sender="vepkkhistyaosaniproject@gmail.com"  # ✅ დაამატე გამგზავნი!
-    )
-
+    msg = Message(subject=subject, recipients=[user_email], body=message_body)
     mail.send(msg)
+
 def generate_verification_token(email):
     serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
     return serializer.dumps(email, salt='email-confirm')
@@ -254,142 +223,51 @@ def confirm_verification_token(token, expiration=3600):
         return False
     return email
 
-# 📌 ვერიფიკაციის იმეილის გაგზავნა
-def send_verification_email(user_email):
-    token = generate_verification_token(user_email)
-    confirm_url = url_for('confirm_email', token=token, _external=True)
-    subject = "Email Verification"
-    message_body = f"დააჭირეთ ამ ბმულს თქვენი ემაილის ვერიფიკაციისთვის: {confirm_url}"
-
-    msg = Message(subject=subject, recipients=[user_email], body=message_body)
-    mail.send(msg)
-
-# 📌 ვერიფიკაციის ბმულის დამუშავება
 @app.route('/confirm/<token>')
 def confirm_email(token):
     email = confirm_verification_token(token)
     if not email:
-        flash("ვერიფიკაციის ბმული არასწორია ან ვადა გაუვიდა!", "danger")
+        flash("The verification link is invalid or expired.", "danger")
         return redirect(url_for('login'))
 
     user = User.query.filter_by(email=email).first()
     if user and not user.is_verified:
         user.is_verified = True
         user.save()
-        flash("თქვენი ემაილი წარმატებით ვერიფიცირდა!", "success")
+        flash("Your email has been successfully verified!", "success")
     elif user and user.is_verified:
-        flash("თქვენი ემაილი უკვე ვერიფიცირებულია!", "info")
+        flash("Your email is already verified.", "info")
 
     return redirect(url_for('login'))
 
+
+# Routes for Admin and User Management
 @app.route("/admin/users")
 @login_required
 def view_users():
-    if current_user.username == "sandroqatamadze":
+    if current_user.username == "admin":
         users = User.query.all()
-        return render_template("admin_users.html", users=users, title="მონაცემების ხილვა")
+        return render_template("admin_users.html", users=users, title="Users")
     else:
-        flash("Sorry, you are not authorized to view this page.")
+        flash("Unauthorized access", "danger")
         return redirect(url_for('noadmin'))
-
-
 
 @app.route("/admin")
 @login_required
 def admin():
-    if current_user.username == "sandroqatamadze":
-        return render_template("admin.html", title="ადმინის გვერდი - ვეფხისტყაოსანი")
+    if current_user.username == "admin":
+        return render_template("admin.html", title="Admin Dashboard")
     else:
-        flash("Sorry but you are not the admin")
+        flash("Unauthorized access", "danger")
         return redirect(url_for('noadmin'))
 
 
-
-@app.route("/")
-def index():
-    return render_template("index.html", title="ვეფხისტყაოსანი")
-
-@app.route("/update", methods=["GET", "POST"])
-def update():
-    form = UpdateForm()
-    if form.validate_on_submit():
-        print(form.update.data)
-    return render_template("update.html", form=form, title="გააგრძელე - ვეფხისტყაოსანი")
-
-@app.route("/about")
-def about():
-    return render_template("about.html", title="პროექტის შესახებ - ვეფხისტყაოსანი")
-
-@app.route("/contact", methods=["GET", "POST"])
-def contact():
-    form = MessageForm()
-    if form.validate_on_submit():
-        try:
-            # ელ. ფოსტაზე გაგზავნა
-            msg = Message('ახალი შეტყობინება - ვეფხისტყაოსანი',
-                         recipients=['vepkhistyaosaniproject@gmail.com'])
-            msg.sender = current_user.email  # ავტომატურად წამოიღეთ მომხმარებლის ელ. ფოსტა
-            msg.body = form.message.data  # შეტყობინება
-            mail.send(msg)
-
-            print("Message sent!")
-            return render_template("success.html", title="შეტყობინება გაგზავნილია")
-
-        except Exception as e:
-            print(f"Error: {e}")
-            return render_template("contact.html", form=form, title="კონტაქტი - ვეფხისტყაოსანი", error="შეტყობინება ვერ გაიგზავნა. სცადეთ თავიდან.")
-    
-    return render_template("contact.html", form=form, title="კონტაქტი - ვეფხისტყაოსანი")
-    
-
-
-@app.route("/author")
-def author():
-    return render_template("author.html", title="ავტორის შესახებ - ვეფხისტყაოსანი")
-
-# 📌 ავტორიზაციის როუტი - მხოლოდ ვერიფიცირებული მომხმარებლებისთვის
-
-
-@app.route("/login", methods=["GET", "POST"])
-@limiter.limit("5 per minute")  # 5 მცდელობა 1 წუთში
-def login():
-    form = LoginForm()
-    
-    if form.validate_on_submit():
-        identifier = form.identifier.data  # შეიძლება იყოს იუზერნეიმი ან ელფოსტა
-        password = form.password.data
-        
-        # ვეძებთ მომხმარებელს იუზერნეიმით ან ელფოსტით
-        user = User.query.filter((User.username == identifier) | (User.email == identifier)).first()
-        
-        if user and check_password_hash(user.password, password):
-            login_user(user)
-            flash("წარმატებული ავტორიზაცია!", "success")
-            return redirect(url_for("index"))
-        else:
-            flash("❌ მომხმარებლის სახელი, ელფოსტა ან პაროლი არასწორია!", "danger")
-
-    return render_template("login.html", form=form, title="ავტორიზაცია - ვეფხისტყაოსანი")
-
-
-
-
-@app.route("/poem")
-def poem():
-    return render_template("poem.html", title="პოემა - ვეფხისტყაოსანი")
-
-@app.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    return redirect(url_for('index'))
-
+# User Profile and Registration
 @app.route("/profile")
 @login_required
 def profile():
-    return render_template("profile.html", title="პროფილი - ვეფხისტყაოსანი")
+    return render_template("profile.html", title="Profile")
 
-# 📌 რეგისტრაციის როუტი - ემაილის ვერიფიკაციის გაგზავნით
 @app.route("/register", methods=["GET", "POST"])
 def register():
     form = RegisterForm()
@@ -405,16 +283,60 @@ def register():
         )
         user.create()
         send_verification_email(user.email)
-        flash("თქვენს ელფოსტაზე გაგზავნილია ვერიფიკაციის ბმული!", "info")
+        flash("Verification email sent!", "info")
         return redirect(url_for("login"))
-    
-    print(form.errors) 
-    return render_template("register.html", form=form, title="რეგისტრაცია - ვეფხისტყაოსანი")
+    return render_template("register.html", form=form, title="Register")
+
+
+@app.route("/login", methods=["GET", "POST"])
+@limiter.limit("5 per minute")
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        identifier = form.identifier.data
+        password = form.password.data
+        user = User.query.filter((User.username == identifier) | (User.email == identifier)).first()
+        if user and check_password_hash(user.password, password):
+            login_user(user)
+            flash("Login successful!", "success")
+            return redirect(url_for("index"))
+        else:
+            flash("Invalid credentials.", "danger")
+    return render_template("login.html", form=form, title="Login")
+
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
+
+
+# Static Pages
+@app.route("/about")
+def about():
+    return render_template("about.html", title="About")
+
+@app.route("/contact", methods=["GET", "POST"])
+def contact():
+    form = MessageForm()
+    if form.validate_on_submit():
+        try:
+            msg = Message('New Message', recipients=['contact@website.com'])
+            msg.sender = current_user.email
+            msg.body = form.message.data
+            mail.send(msg)
+            flash("Message sent!", "success")
+            return render_template("success.html", title="Message Sent")
+        except Exception as e:
+            flash("Message failed to send. Please try again.", "danger")
+    return render_template("contact.html", form=form, title="Contact")
 
 
 @app.route("/privacy")
 def privacy():
-    return render_template("privacy.html", title="უსაფრთხოების პოლიტიკა - ვეფხისტყაოსანი")
+    return render_template("privacy.html", title="Privacy Policy")
 
-if __name__ == "__main__":  
+
+if __name__ == "__main__":
     app.run(debug=True)
