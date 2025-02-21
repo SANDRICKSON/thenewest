@@ -28,10 +28,9 @@ class MessageForm(FlaskForm):
     submit = SubmitField("გაგზავნეთ მესიჯი")
 
 class LoginForm(FlaskForm):
-       username = StringField("შეიყვანეთ სახელი", validators=[DataRequired(), Length(min=8, max=64)])
-
-       password = PasswordField("შეიყვანეთ პაროლი", validators=[DataRequired(), Length(min=8, max=64)])
-       submit = SubmitField("ავტორიზაცია")
+    identifier = StringField('შეიყვანეთ სახელი ან მეილი', validators=[DataRequired()])
+    password = PasswordField('პაროლი', validators=[DataRequired()])
+    submit = SubmitField('ავტორიზაცია')
 
 
 class UpdateForm(FlaskForm):
