@@ -1,70 +1,98 @@
-from flask import Flask, render_template, redirect, url_for, flash, request, session
+from flask import render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, current_user, login_required
 from werkzeug.security import check_password_hash, generate_password_hash
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadTimeSignature
+from itsdangerous import URLSafeTimedSerializer
 from flask_mail import Message
-from extensions import app, mail, db
+from extensions import app, mail,db
 from models import User
-from forms import RegisterForm, MessageForm, LoginForm, UpdateForm, ForgotPasswordForm, ResetPasswordForm, FormUpdateForm
+from forms import RegisterForm, MessageForm, LoginForm, UpdateForm, ForgotPasswordForm,ResetPasswordForm, FormUpdateForm
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from authlib.integrations.flask_client import OAuth
 
-limiter = Limiter(get_remote_address, app=app, default_limits=["5 per minute"])
+
+limiter = Limiter(get_remote_address, app=app, default_limits=["5 per minute"])  # 5 მცდელობა 1 წუთში
+
 
 # 📌 Email ვერიფიკაციის ტოკენის გენერაცია
 s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
-# Google OAuth კონფიგურაცია
-oauth = OAuth(app)
-google = oauth.register(
-    name='google',
-    client_id='501759979349-up2l59bd01tg6qh38fctmdr27p8l3qse.apps.googleusercontent.com',  # ჩააგდე შენი Google Client ID
-    client_secret='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',  # ჩააგდე შენი Google Client Secret
-    authorize_url='https://accounts.google.com/o/oauth2/auth',
-    access_token_url='https://accounts.google.com/o/oauth2/token',
-    client_kwargs={
-        'scope': 'email',
-    }
-)
+@app.errorhandler(429)
+def too_many_requests(error):
+    return render_template('429.html', title="მოთხოვნების ლიმიტი გადაჭარბებულია"), 429
 
-@app.route("/")
-def index():
-    return render_template("index.html", title="ვეფხისტყაოსანი")
 
-# 📌 Google OAuth როუტი
-@app.route('/login')
-def login():
-    redirect_uri = url_for('google_authorized', _external=True)
-    return google.authorize_redirect(redirect_uri)
+@app.after_request
+def add_security_headers(response):
+    response.headers["X-Frame-Options"] = "DENY"  # ბლოკავს ჩასმას სხვა საიტებზე
+    response.headers["X-Content-Type-Options"] = "nosniff"  # MIME type spoofing-ისგან დაცვა
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"  # Referer header-ის კონტროლი
+    return response
 
-@app.route('/login/authorized')
-def google_authorized():
-    token = google.authorize_access_token()
-    session['google_token'] = token
-    return redirect(url_for('home'))
 
-@google.tokengetter
-def get_google_oauth_token():
-    return session.get('google_token')
 
-@app.route('/home')
-@login_required
-def home():
-    if 'google_token' in session:
-        user = google.get('plus/v1/people/me')
-        return f'Hello, {user.data["displayName"]}!'
-    return redirect(url_for('login'))
 
-# 📌 Email ვერიფიკაციის ფუნქცია
-def send_verification_email(user_email):
-    token = generate_verification_token(user_email)
-    confirm_url = url_for('confirm_email', token=token, _external=True)
-    subject = "Email Verification"
-    message_body = f"დააჭირეთ ამ ბმულს თქვენი ემაილის ვერიფიკაციისთვის: {confirm_url}"
+def send_account_update_email(user, changed_fields):
+    """აგზავნის ელფოსტას, როდესაც მომხმარებელი ცვლის მონაცემებს."""
+    subject = "ანგარიშის მონაცემები შეიცვალა"
+    changes = ", ".join(changed_fields)  # რა შეიცვალა კონკრეტულად
+    message_body = f"""
+    ძვირფასო {user.username}!
 
-    msg = Message(subject=subject, recipients=[user_email], body=message_body)
+    თქვენს ანგარიშზე შეიცვალა შემდეგი მონაცემები: {changes}.
+    თუ ეს თქვენ არ ყოფილხართ და გაქვთ ეჭვი, რომ თაღლითური შემოტევა იყო, გთხოვთ, მოგვწერეთ: vepkhistyaosaniproject@gmail.com
+
+    მადლობა ყურადღებისთვის!
+    """
+
+    msg = Message(subject=subject, recipients=[user.email], body=message_body)
     mail.send(msg)
+
+
+@app.route("/settings", methods=["GET", "POST"])
+@login_required
+def settings():
+    form = FormUpdateForm(obj=current_user)  # ფორმის შევსება მიმდინარე მომხმარებლის მონაცემებით
+    changed_fields = []  # შევინახოთ რა შეიცვალა
+
+    if form.validate_on_submit():
+        # შევადაროთ ძველი და ახალი მნიშვნელობები
+        if current_user.username != form.username.data:
+            changed_fields.append("მომხმარებლის სახელი")
+            current_user.username = form.username.data
+
+        if current_user.email != form.email.data:
+            changed_fields.append("ელ.ფოსტა")
+            current_user.email = form.email.data
+
+        if current_user.birthday != form.birthday.data:
+            changed_fields.append("დაბადების თარიღი")
+            current_user.birthday = form.birthday.data
+
+        if current_user.country != form.country.data:
+            changed_fields.append("ქვეყანა")
+            current_user.country = form.country.data
+
+        if current_user.gender != form.gender.data:
+            changed_fields.append("სქესი")
+            current_user.gender = form.gender.data
+
+        # თუ მომხმარებელმა პაროლის შეცვლა გადაწყვიტა
+        if form.password.data:
+            changed_fields.append("პაროლი")
+            current_user.password = generate_password_hash(form.password.data)
+
+        db.session.commit()
+
+        # თუ რაიმე შეიცვალა, ვუგზავნით ელფოსტას
+        if changed_fields:
+            send_account_update_email(current_user, changed_fields)
+
+        flash("მონაცემები წარმატებით განახლდა!", "success")
+        return redirect(url_for("profile"))
+
+    return render_template("settings.html", form=form, title="პარამეტრები - ვეფხისტყაოსანი")
+
 
 # 📌 პაროლის აღდგენის როუტი
 @app.route('/forgot_password', methods=['GET', 'POST'])
@@ -107,6 +135,78 @@ def reset_password(token):
 
     return render_template('reset_password.html', form=form)
 
+@app.errorhandler(401)
+def unauthorized(error):
+    return render_template('401.html', title="არაავტორიზირებული მომხმარებელი - ვეფხისტყაოსანი"), 401
+
+@app.errorhandler(500)
+def unauthorized(error):
+    return render_template('500.html', title="სერვერის შეცდომა - ვეფხისტყაოსანი"), 500
+
+# 502 - Bad Gateway
+@app.errorhandler(502)
+def bad_gateway(error):
+    return render_template('502.html',title="ცუდი კარიბჭე - ვეფხისტყაოსანი"), 502
+
+# 503 - Service Unavailable
+@app.errorhandler(503)
+def service_unavailable(error):
+    return render_template('503.html', title="მიუწვდომელი სერვისი - ვეფხისტყაოსანი"), 503
+
+# 504 - Gateway Timeout
+@app.errorhandler(504)
+def gateway_timeout(error):
+    return render_template('504.html', title="სესიის დრო ამოიწურა - ვეფხისტყაოსანი"), 504
+
+@app.route("/403")
+@login_required
+def noadmin():
+    return render_template("403.html", title="აკრძალული წვდომა - ვეფხისტყაოსანი")
+
+
+@app.errorhandler(404)
+def page_not_found(error):
+    return render_template('404.html', title="გვერდი არ მოიძებნა - ვეფხისტყაოსანი"), 404
+
+def send_verification_email(user_email):
+    token = generate_verification_token(user_email)
+    confirm_url = url_for('confirm_email', token=token, _external=True)
+    subject = "Email Verification"
+    message_body = f"მოგესალმებით, {user.username}! 😊\n\nმადლობა, რომ დაინტერესდით ჩემი პროექტით. თქვენი ანგარიში წარმატებით შეიქმნა! გთხოვთ, გაიარეთ ვერიფიკაცია შემდეგ ბმულზე:\n\n{confirm_url}\n\nმადლობა ყურადღებისთვის! 🙌"
+
+
+
+    msg = Message(
+        subject=subject,
+        recipients=[user_email],
+        body=message_body,
+        sender="vepkkhistyaosaniproject@gmail.com"  # ✅ დაამატე გამგზავნი!
+    )
+
+    mail.send(msg)
+def generate_verification_token(email):
+    serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+    return serializer.dumps(email, salt='email-confirm')
+
+def confirm_verification_token(token, expiration=3600):
+    serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+    try:
+        email = serializer.loads(token, salt='email-confirm', max_age=expiration)
+    except:
+        return False
+    return email
+
+# 📌 ვერიფიკაციის იმეილის გაგზავნა
+def send_verification_email(user_email):
+    token = generate_verification_token(user_email)
+    confirm_url = url_for('confirm_email', token=token, _external=True)
+    subject = "Email Verification"
+    message_body = f"დააჭირეთ ამ ბმულს თქვენი ემაილის ვერიფიკაციისთვის: {confirm_url}"
+
+    msg = Message(subject=subject, recipients=[user_email], body=message_body)
+    mail.send(msg)
+
+# 📌 ვერიფიკაციის ბმულის დამუშავება
 @app.route('/confirm/<token>')
 def confirm_email(token):
     email = confirm_verification_token(token)
@@ -124,70 +224,91 @@ def confirm_email(token):
 
     return redirect(url_for('login'))
 
-# 📌 რეგისტრაცია, პაროლის შეცვლა, მომხმარებლის პროფილი
+@app.route("/admin/users")
+@login_required
+def view_users():
+    if current_user.username == "sandroqatamadze":
+        users = User.query.all()
+        return render_template("admin_users.html", users=users, title="მონაცემების ხილვა")
+    else:
+        flash("Sorry, you are not authorized to view this page.")
+        return redirect(url_for('noadmin'))
+
+
+
+@app.route("/admin")
+@login_required
+def admin():
+    if current_user.username == "sandroqatamadze":
+        return render_template("admin.html", title="ადმინის გვერდი - ვეფხისტყაოსანი")
+    else:
+        flash("Sorry but you are not the admin")
+        return redirect(url_for('noadmin'))
+
+
+
+@app.route("/")
+def index():
+    return render_template("index.html", title="ვეფხისტყაოსანი")
+
+@app.route("/update", methods=["GET", "POST"])
+def update():
+    form = UpdateForm()
+    if form.validate_on_submit():
+        print(form.update.data)
+    return render_template("update.html", form=form, title="გააგრძელე - ვეფხისტყაოსანი")
+
+@app.route("/about")
+def about():
+    return render_template("about.html", title="პროექტის შესახებ - ვეფხისტყაოსანი")
+
+@app.route("/contact", methods=["GET", "POST"])
+def contact():
+    form = MessageForm()
+    if form.validate_on_submit():
+        # ელ. ფოსტაზე გაგზავნა
+        msg = Message('New Contact Form Submission',
+                      recipients=['vepkhistyaosaniproject@gmail.com'])  # მოათავსე ის მეილი, რომელზეც უნდა მივიდეს შეტყობინება
+        msg.body = form.message.data  # შეტყობინება
+        mail.send(msg)
+        
+        print("Message sent!")
+    return render_template("contact.html", form=form, title="კონტაქტი - ვეფხისტყაოსანი")
+
+@app.route("/author")
+def author():
+    return render_template("author.html", title="ავტორის შესახებ - ვეფხისტყაოსანი")
+
+# 📌 ავტორიზაციის როუტი - მხოლოდ ვერიფიცირებული მომხმარებლებისთვის
+@app.route("/login", methods=["GET", "POST"])
+@limiter.limit("5 per minute")  # 3 მცდელობა 1 წუთში
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(username=form.username.data).first()
+        if user and check_password_hash(user.password, form.password.data):
+            login_user(user)
+            return redirect(url_for("index"))
+    return render_template("login.html", form=form, title="ავტორიზაცია - ვეფხისტყაოსანი")
+
+
+
+@app.route("/poem")
+def poem():
+    return render_template("poem.html", title="პოემა - ვეფხისტყაოსანი")
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
+
 @app.route("/profile")
 @login_required
 def profile():
     return render_template("profile.html", title="პროფილი - ვეფხისტყაოსანი")
 
-@app.route("/settings", methods=["GET", "POST"])
-@login_required
-def settings():
-    form = FormUpdateForm(obj=current_user)  # ფორმის შევსება მიმდინარე მომხმარებლის მონაცემებით
-    changed_fields = []  # შევინახოთ რა შეიცვალა
-
-    if form.validate_on_submit():
-        if current_user.username != form.username.data:
-            changed_fields.append("მომხმარებლის სახელი")
-            current_user.username = form.username.data
-
-        if current_user.email != form.email.data:
-            changed_fields.append("ელ.ფოსტა")
-            current_user.email = form.email.data
-
-        if current_user.birthday != form.birthday.data:
-            changed_fields.append("დაბადების თარიღი")
-            current_user.birthday = form.birthday.data
-
-        if current_user.country != form.country.data:
-            changed_fields.append("ქვეყანა")
-            current_user.country = form.country.data
-
-        if current_user.gender != form.gender.data:
-            changed_fields.append("სქესი")
-            current_user.gender = form.gender.data
-
-        if form.password.data:
-            changed_fields.append("პაროლი")
-            current_user.password = generate_password_hash(form.password.data)
-
-        db.session.commit()
-
-        if changed_fields:
-            send_account_update_email(current_user, changed_fields)
-
-        flash("მონაცემები წარმატებით განახლდა!", "success")
-        return redirect(url_for("profile"))
-
-    return render_template("settings.html", form=form, title="პარამეტრები - ვეფხისტყაოსანი")
-
-def send_account_update_email(user, changed_fields):
-    """აგზავნის ელფოსტას, როდესაც მომხმარებელი ცვლის მონაცემებს."""
-    subject = "ანგარიშის მონაცემები შეიცვალა"
-    changes = ", ".join(changed_fields)  # რა შეიცვალა კონკრეტულად
-    message_body = f"""
-    ძვირფასო {user.username}!
-
-    თქვენს ანგარიშზე შეიცვალა შემდეგი მონაცემები: {changes}.
-    თუ ეს თქვენ არ ყოფილხართ და გაქვთ ეჭვი, რომ თაღლითური შემოტევა იყო, გთხოვთ, მოგვწერეთ: vepkhistyaosaniproject@gmail.com
-
-    მადლობა ყურადღებისთვის!
-    """
-
-    msg = Message(subject=subject, recipients=[user.email], body=message_body)
-    mail.send(msg)
-
-# 📌 რეგისტრაციის როუტი
+# 📌 რეგისტრაციის როუტი - ემაილის ვერიფიკაციის გაგზავნით
 @app.route("/register", methods=["GET", "POST"])
 def register():
     form = RegisterForm()
@@ -206,45 +327,13 @@ def register():
         flash("თქვენს ელფოსტაზე გაგზავნილია ვერიფიკაციის ბმული!", "info")
         return redirect(url_for("login"))
     
+    print(form.errors) 
     return render_template("register.html", form=form, title="რეგისტრაცია - ვეფხისტყაოსანი")
 
-# 📌 ლოგინი, არგუმენტების გადაცემით
-@app.route("/login", methods=["GET", "POST"])
-@limiter.limit("5 per minute")
-def login():
-    form = LoginForm()
-    if form.validate_on_submit():
-        user = User.query.filter_by(username=form.username.data).first()
-        if user and check_password_hash(user.password, form.password.data):
-            login_user(user)
-            return redirect(url_for("index"))
-    return render_template("login.html", form=form, title="ავტორიზაცია - ვეფხისტყაოსანი")
 
-@app.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    return redirect(url_for('index'))
-
-@app.route("/about")
-def about():
-    return render_template("about.html", title="პროექტის შესახებ - ვეფხისტყაოსანი")
-
-@app.route("/contact", methods=["GET", "POST"])
-def contact():
-    form = MessageForm()
-    if form.validate_on_submit():
-        msg = Message('New Contact Form Submission',
-                      recipients=['vepkhistyaosaniproject@gmail.com']) 
-        msg.body = form.message.data  
-        mail.send(msg)
-        
-        flash("Message sent!")
-    return render_template("contact.html", form=form, title="კონტაქტი - ვეფხისტყაოსანი")
-
-@app.route("/author")
-def author():
-    return render_template("author.html", title="ავტორის შესახებ - ვეფხისტყაოსანი")
+@app.route("/privacy")
+def privacy():
+    return render_template("privacy.html", title="უსაფრთხოების პოლიტიკა - ვეფხისტყაოსანი")
 
 if __name__ == "__main__":  
     app.run(debug=True)
