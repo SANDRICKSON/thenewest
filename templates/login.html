@@ -48,16 +48,30 @@
         </form>
     </div>
 
-    <!-- Google Button -->
-<div class="row mb-3">
-    <div class="col-sm-10 offset-sm-2">
-<a href="{{ url_for('login') }}" class="btn btn-danger w-100 rounded-pill shadow-sm d-flex align-items-center justify-content-center">
-    <i class="fab fa-google me-2"></i> Google-ით გაგრძელება
-</a>
+    <!-- Social Media Buttons -->
+    <div class="row mb-3">
+        <div class="col-sm-10 offset-sm-2">
+            <!-- Google Button -->
+            <a href="{{ url_for('login') }}" class="btn btn-danger w-100 rounded-pill shadow-sm d-flex align-items-center justify-content-center mb-2">
+                <i class="fab fa-google me-2"></i> Google-ით გაგრძელება
+            </a>
+            
+            <!-- Facebook Button -->
+            <a href="{{ url_for('facebook_login') }}" class="btn btn-primary w-100 rounded-pill shadow-sm d-flex align-items-center justify-content-center mb-2">
+                <i class="fab fa-facebook-f me-2"></i> Facebook-ით გაგრძელება
+            </a>
 
+            <!-- Twitter Button -->
+            <a href="{{ url_for('twitter_login') }}" class="btn btn-info w-100 rounded-pill shadow-sm d-flex align-items-center justify-content-center mb-2">
+                <i class="fab fa-twitter me-2"></i> Twitter-ით გაგრძელება
+            </a>
+
+            <!-- LinkedIn Button -->
+            <a href="{{ url_for('linkedin_login') }}" class="btn btn-dark w-100 rounded-pill shadow-sm d-flex align-items-center justify-content-center mb-2">
+                <i class="fab fa-linkedin me-2"></i> LinkedIn-ით გაგრძელება
+            </a>
+        </div>
     </div>
-</div>
-
 
     <div class="text-center mt-3">
         <a href="{{ url_for('forgot_password') }}" class="text-decoration-none text-primary fw-bold">🔑 პაროლი დაგავიწყდა?</a>
@@ -97,6 +111,24 @@
         .btn-danger:hover {
             background-color: #c1351d;
             border-color: #c1351d;
+        }
+        .btn-info {
+            background-color: #1da1f2;
+            border-color: #1da1f2;
+            transition: 0.3s;
+        }
+        .btn-info:hover {
+            background-color: #1991d0;
+            border-color: #1991d0;
+        }
+        .btn-dark {
+            background-color: #0e76a8;
+            border-color: #0e76a8;
+            transition: 0.3s;
+        }
+        .btn-dark:hover {
+            background-color: #004a6e;
+            border-color: #004a6e;
         }
     </style>
 
