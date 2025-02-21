@@ -1,19 +1,18 @@
 {% extends "base.html" %}
 
 {% block content %}
-
+    
     <div class="container border rounded shadow-lg p-4 mt-4 bg-light">
         <form method="post">
             {{ form.hidden_tag() }}
 
-            <!-- მომხმარებლის ველი (შეიძლება იყოს იუზერნეიმი ან ელფოსტა) -->
             <div class="row mb-3">
-                <label for="{{ form.identifier.id }}" class="col-sm-2 col-form-label fw-bold">შეიყვანეთ იუზერნეიმი/ელფოსტა</label>
+                <label for="{{ form.username.id }}" class="col-sm-2 col-form-label fw-bold">{{ form.username.label }}</label>
                 <div class="col-sm-10">
-                    {{ form.identifier(class="form-control rounded-pill shadow-sm {% if form.identifier.errors %}is-invalid{% endif %}", placeholder="შეიყვანეთ იუზერნეიმი ან ელფოსტა") }}
-                    {% if form.identifier.errors %}
-                        <div class="invalid-feedback d-block mt-1">
-                            {% for error in form.identifier.errors %}
+                    {{ form.username(class="form-control rounded-pill shadow-sm", placeholder="შეიყვანეთ სახელი") }}
+                    {% if form.username.errors %}
+                        <div class="text-danger mt-1">
+                            {% for error in form.username.errors %}
                                 <small>⚠ {{ error }}</small><br>
                             {% endfor %}
                         </div>
@@ -21,18 +20,17 @@
                 </div>
             </div>
 
-            <!-- პაროლის ველი -->
             <div class="row mb-3">
-                <label for="{{ form.password.id }}" class="col-sm-2 col-form-label fw-bold">შეიყვანეთ პაროლი</label>
+                <label for="{{ form.password.id }}" class="col-sm-2 col-form-label fw-bold">{{ form.password.label }}</label>
                 <div class="col-sm-10">
                     <div class="input-group">
-                        {{ form.password(class="form-control rounded-pill shadow-sm {% if form.password.errors %}is-invalid{% endif %}", placeholder="შეიყვანეთ პაროლი", id="password") }}
+                        {{ form.password(class="form-control rounded-pill shadow-sm", placeholder="შეიყვანეთ პაროლი", id="password") }}
                         <span class="input-group-text bg-white border-0 shadow-sm rounded-pill" onclick="togglePassword('password', 'togglePasswordIcon')">
                             <i id="togglePasswordIcon" class="fa fa-eye text-primary"></i>
                         </span>
                     </div>
                     {% if form.password.errors %}
-                        <div class="invalid-feedback d-block mt-1">
+                        <div class="text-danger mt-1">
                             {% for error in form.password.errors %}
                                 <small>⚠ {{ error }}</small><br>
                             {% endfor %}
@@ -41,21 +39,15 @@
                 </div>
             </div>
 
-            <!-- შესვლის ღილაკი -->
             <div class="row mb-3">
                 <div class="col-sm-10 offset-sm-2">
                     {{ form.submit(class="btn btn-primary w-100 rounded-pill shadow-sm") }}
                 </div>
             </div>
-
+            
         </form>
     </div>
- <div class="text-center mt-4">
-        <a href="{{ url_for('google.login') }}" class="btn btn-danger w-100 rounded-pill shadow-sm">
-            <i class="fa fa-google"></i> Google-ით შესვლა
-        </a>
-    </div>
-    <!-- პაროლის აღდგენის ბმული -->
+
     <div class="text-center mt-3">
         <a href="{{ url_for('forgot_password') }}" class="text-decoration-none text-primary fw-bold">🔑 პაროლი დაგავიწყდა?</a>
     </div>
@@ -85,17 +77,6 @@
         }
         .text-danger {
             font-size: 14px;
-        }
-        .is-invalid {
-            border: 2px solid #dc3545 !important;
-            animation: shake 0.3s ease-in-out;
-        }
-        @keyframes shake {
-            0% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            50% { transform: translateX(5px); }
-            75% { transform: translateX(-5px); }
-            100% { transform: translateX(0); }
         }
     </style>
 
