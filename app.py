@@ -11,21 +11,22 @@ from authlib.integrations.flask_client import OAuth
 from forms import RegisterForm, MessageForm, LoginForm, UpdateForm, ForgotPasswordForm,ResetPasswordForm, FormUpdateForm
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+
+
 oauth = OAuth(app)
 
-google = oauth.remote_app(
+google = oauth.register(
     'google',
-    consumer_key=app.config['GOOGLE_CLIENT_ID'],
-    consumer_secret=app.config['GOOGLE_CLIENT_SECRET'],
-
-
-    request_token_params={'scope': 'email profile'},
-    base_url='https://www.googleapis.com/oauth2/v1/',
-    request_token_url=None,
-    access_token_method='POST',
+    client_id='YOUR_GOOGLE_CLIENT_ID',
+    client_secret='YOUR_GOOGLE_CLIENT_SECRET',
+    authorize_url='https://accounts.google.com/o/oauth2/auth',
+    authorize_params=None,
     access_token_url='https://accounts.google.com/o/oauth2/token',
-    authorize_url='https://accounts.google.com/o/oauth2/auth'
+    refresh_token_url=None,
+    redirect_uri='YOUR_REDIRECT_URI',
+    client_kwargs={'scope': 'openid profile email'},
 )
+
 
 
 @app.route('/google_login')
