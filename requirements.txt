@@ -8,3 +8,5 @@ gunicorn
 Flask-Mail
 itsdangerous
 Flask-Limiter
+Flask-Dance
+Flask-OAuthlib  # თუ Flask-Dance არ მუშაობს
