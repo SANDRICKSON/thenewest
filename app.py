@@ -9,7 +9,54 @@ from models import User
 from forms import RegisterForm, MessageForm, LoginForm, UpdateForm, ForgotPasswordForm,ResetPasswordForm, FormUpdateForm
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+oauth = OAuth(app)
 
+google = oauth.remote_app(
+    'google',
+    consumer_key=app.config['501759979349-up2l59bd01tg6qh38fctmdr27p8l3qse.apps.googleusercontent.com'],
+    consumer_secret=app.config['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'],
+    request_token_params={'scope': 'email profile'},
+    base_url='https://www.googleapis.com/oauth2/v1/',
+    request_token_url=None,
+    access_token_method='POST',
+    access_token_url='https://accounts.google.com/o/oauth2/token',
+    authorize_url='https://accounts.google.com/o/oauth2/auth'
+)
+
+
+@app.route('/google_login')
+def google_login():
+    return google.authorize(callback=url_for('google_callback', _external=True))
+
+
+@app.route('/login/callback')
+def google_callback():
+    response = google.authorized_response()
+    if response is None or response.get('access_token') is None:
+        return "Access denied: reason={} error={}".format(
+            request.args['error_reason'],
+            request.args['error_description']
+        )
+
+    session['google_token'] = (response['access_token'], '')
+    user_info = google.get('userinfo')
+
+    # მოძებნე ან შექმენი მომხმარებელი ბაზაში
+    email = user_info.data['email']
+    user = User.query.filter_by(email=email).first()
+
+    if not user:
+        user = User(username=user_info.data['name'], email=email, is_verified=True)
+        db.session.add(user)
+        db.session.commit()
+
+    login_user(user)
+    return redirect(url_for('profile'))
+
+
+@google.tokengetter
+def get_google_oauth_token():
+    return session.get('google_token')
 
 limiter = Limiter(get_remote_address, app=app, default_limits=["5 per minute"])  # 5 მცდელობა 1 წუთში
 
