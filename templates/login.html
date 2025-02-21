@@ -1,18 +1,19 @@
 {% extends "base.html" %}
 
 {% block content %}
-    
+
     <div class="container border rounded shadow-lg p-4 mt-4 bg-light">
         <form method="post">
             {{ form.hidden_tag() }}
 
+            <!-- მომხმარებლის ველი (შეიძლება იყოს იუზერნეიმი ან ელფოსტა) -->
             <div class="row mb-3">
-                <label for="{{ form.username.id }}" class="col-sm-2 col-form-label fw-bold">{{ form.username.label }}</label>
+                <label for="{{ form.identifier.id }}" class="col-sm-2 col-form-label fw-bold">მომხმარებელი / ელფოსტა</label>
                 <div class="col-sm-10">
-                    {{ form.username(class="form-control rounded-pill shadow-sm {% if form.username.errors %}is-invalid{% endif %}", placeholder="შეიყვანეთ სახელი") }}
-                    {% if form.username.errors %}
+                    {{ form.identifier(class="form-control rounded-pill shadow-sm {% if form.identifier.errors %}is-invalid{% endif %}", placeholder="შეიყვანეთ იუზერნეიმი ან ელფოსტა") }}
+                    {% if form.identifier.errors %}
                         <div class="invalid-feedback d-block mt-1">
-                            {% for error in form.username.errors %}
+                            {% for error in form.identifier.errors %}
                                 <small>⚠ {{ error }}</small><br>
                             {% endfor %}
                         </div>
@@ -20,8 +21,9 @@
                 </div>
             </div>
 
+            <!-- პაროლის ველი -->
             <div class="row mb-3">
-                <label for="{{ form.password.id }}" class="col-sm-2 col-form-label fw-bold">{{ form.password.label }}</label>
+                <label for="{{ form.password.id }}" class="col-sm-2 col-form-label fw-bold">პაროლი</label>
                 <div class="col-sm-10">
                     <div class="input-group">
                         {{ form.password(class="form-control rounded-pill shadow-sm {% if form.password.errors %}is-invalid{% endif %}", placeholder="შეიყვანეთ პაროლი", id="password") }}
@@ -39,15 +41,17 @@
                 </div>
             </div>
 
+            <!-- შესვლის ღილაკი -->
             <div class="row mb-3">
                 <div class="col-sm-10 offset-sm-2">
                     {{ form.submit(class="btn btn-primary w-100 rounded-pill shadow-sm") }}
                 </div>
             </div>
-            
+
         </form>
     </div>
 
+    <!-- პაროლის აღდგენის ბმული -->
     <div class="text-center mt-3">
         <a href="{{ url_for('forgot_password') }}" class="text-decoration-none text-primary fw-bold">🔑 პაროლი დაგავიწყდა?</a>
     </div>
@@ -108,6 +112,7 @@
         }
     </script>
 
+    <!-- FontAwesome-ის ბიბლიოთეკის დამატება -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
 {% endblock %}
