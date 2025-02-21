@@ -7,12 +7,12 @@
             {{ form.hidden_tag() }}
 
             <div class="row mb-3">
-                <label for="{{ form.username.id }}" class="col-sm-2 col-form-label fw-bold">{{ form.username.label }}</label>
+                <label for="{{ form.identifier.id }}" class="col-sm-2 col-form-label fw-bold">{{ form.identifier.label }}</label>
                 <div class="col-sm-10">
-                    {{ form.username(class="form-control rounded-pill shadow-sm", placeholder="შეიყვანეთ სახელი") }}
-                    {% if form.username.errors %}
+                    {{ form.identifier(class="form-control rounded-pill shadow-sm", placeholder="შეიყვანეთ სახელი ან მეილი") }}
+                    {% if form.identifier.errors %}
                         <div class="text-danger mt-1">
-                            {% for error in form.username.errors %}
+                            {% for error in form.identifier.errors %}
                                 <small>⚠ {{ error }}</small><br>
                             {% endfor %}
                         </div>
@@ -47,13 +47,14 @@
             
         </form>
     </div>
-<div class="row mb-3">
-    <div class="col-sm-10 offset-sm-2">
-        <button type="button" class="btn btn-danger w-100 rounded-pill shadow-sm">
-            <i class="fa fa-google"></i> Google-ით გაგრძელება
-        </button>
+
+    <div class="row mb-3">
+        <div class="col-sm-10 offset-sm-2">
+            <button type="button" class="btn btn-danger w-100 rounded-pill shadow-sm">
+                <i class="fa fa-google"></i> Google-ით გაგრძელება
+            </button>
+        </div>
     </div>
-</div>
 
     <div class="text-center mt-3">
         <a href="{{ url_for('forgot_password') }}" class="text-decoration-none text-primary fw-bold">🔑 პაროლი დაგავიწყდა?</a>
