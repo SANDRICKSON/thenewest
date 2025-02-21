@@ -51,11 +51,10 @@
     <!-- Google Button -->
 <div class="row mb-3">
     <div class="col-sm-10 offset-sm-2">
-        <button type="button" 
-                class="btn btn-danger w-100 rounded-pill shadow-sm d-flex align-items-center justify-content-center"
-                onclick="window.location.href='{{ url_for('google_login') }}'">
-            <i class="fab fa-google me-2"></i> Google-ით გაგრძელება
-        </button>
+<a href="{{ url_for('google_login') }}" class="btn btn-danger w-100 rounded-pill shadow-sm d-flex align-items-center justify-content-center">
+    <i class="fab fa-google me-2"></i> Google-ით გაგრძელება
+</a>
+
     </div>
 </div>
 
