@@ -7,19 +7,11 @@ from flask_mail import Message
 from extensions import app, mail,db
 from models import User
 from forms import RegisterForm, MessageForm, LoginForm, UpdateForm, ForgotPasswordForm,ResetPasswordForm, FormUpdateForm
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-
-
-limiter = Limiter(get_remote_address, app=app, default_limits=["5 per minute"])  # 5 მცდელობა 1 წუთში
 
 
 # 📌 Email ვერიფიკაციის ტოკენის გენერაცია
 s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
-@app.errorhandler(429)
-def too_many_requests(error):
-    return render_template('429.html', title="მოთხოვნების ლიმიტი გადაჭარბებულია"), 429
 
 
 @app.after_request
@@ -32,67 +24,32 @@ def add_security_headers(response):
 
 
 
-def send_account_update_email(user, changed_fields):
-    """აგზავნის ელფოსტას, როდესაც მომხმარებელი ცვლის მონაცემებს."""
-    subject = "ანგარიშის მონაცემები შეიცვალა"
-    changes = ", ".join(changed_fields)  # რა შეიცვალა კონკრეტულად
-    message_body = f"""
-    ძვირფასო {user.username}!
-
-    თქვენს ანგარიშზე შეიცვალა შემდეგი მონაცემები: {changes}.
-    თუ ეს თქვენ არ ყოფილხართ და გაქვთ ეჭვი, რომ თაღლითური შემოტევა იყო, გთხოვთ, მოგვწერეთ: vepkhistyaosaniproject@gmail.com
-
-    მადლობა ყურადღებისთვის!
-    """
-
-    msg = Message(subject=subject, recipients=[user.email], body=message_body)
-    mail.send(msg)
-
-
 @app.route("/settings", methods=["GET", "POST"])
 @login_required
 def settings():
     form = FormUpdateForm(obj=current_user)  # ფორმის შევსება მიმდინარე მომხმარებლის მონაცემებით
-    changed_fields = []  # შევინახოთ რა შეიცვალა
 
     if form.validate_on_submit():
-        # შევადაროთ ძველი და ახალი მნიშვნელობები
-        if current_user.username != form.username.data:
-            changed_fields.append("მომხმარებლის სახელი")
-            current_user.username = form.username.data
-
-        if current_user.email != form.email.data:
-            changed_fields.append("ელ.ფოსტა")
-            current_user.email = form.email.data
-
-        if current_user.birthday != form.birthday.data:
-            changed_fields.append("დაბადების თარიღი")
-            current_user.birthday = form.birthday.data
-
-        if current_user.country != form.country.data:
-            changed_fields.append("ქვეყანა")
-            current_user.country = form.country.data
-
-        if current_user.gender != form.gender.data:
-            changed_fields.append("სქესი")
-            current_user.gender = form.gender.data
+        current_user.username = form.username.data
+        current_user.email = form.email.data
+        current_user.birthday = form.birthday.data
+        
+            
+        current_user.password=form.password.data,
+        
+        current_user.country=form.country.data,
+        current_user.gender=form.gender.data,
+            
 
         # თუ მომხმარებელმა პაროლის შეცვლა გადაწყვიტა
         if form.password.data:
-            changed_fields.append("პაროლი")
             current_user.password = generate_password_hash(form.password.data)
 
         db.session.commit()
-
-        # თუ რაიმე შეიცვალა, ვუგზავნით ელფოსტას
-        if changed_fields:
-            send_account_update_email(current_user, changed_fields)
-
         flash("მონაცემები წარმატებით განახლდა!", "success")
         return redirect(url_for("profile"))
 
     return render_template("settings.html", form=form, title="პარამეტრები - ვეფხისტყაოსანი")
-
 
 # 📌 პაროლის აღდგენის როუტი
 @app.route('/forgot_password', methods=['GET', 'POST'])
@@ -266,13 +223,7 @@ def about():
 def contact():
     form = MessageForm()
     if form.validate_on_submit():
-        # ელ. ფოსტაზე გაგზავნა
-        msg = Message('New Contact Form Submission',
-                      recipients=['vepkhistyaosaniproject@gmail.com'])  # მოათავსე ის მეილი, რომელზეც უნდა მივიდეს შეტყობინება
-        msg.body = form.message.data  # შეტყობინება
-        mail.send(msg)
-        
-        print("Message sent!")
+        print(form.message.data)
     return render_template("contact.html", form=form, title="კონტაქტი - ვეფხისტყაოსანი")
 
 @app.route("/author")
@@ -281,16 +232,20 @@ def author():
 
 # 📌 ავტორიზაციის როუტი - მხოლოდ ვერიფიცირებული მომხმარებლებისთვის
 @app.route("/login", methods=["GET", "POST"])
-@limiter.limit("5 per minute")  # 3 მცდელობა 1 წუთში
 def login():
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(username=form.username.data).first()
+          user = User.query.filter(
+            (User.username == form.identifier.data) | (User.email == form.identifier.data)
+        ).first()
         if user and check_password_hash(user.password, form.password.data):
+            if not user.is_verified:
+                send_verification_email(user.email)  # ხელახალი გაგზავნა
+                flash("თქვენს ელ-ფოსტაზე ვერიფიკაციის ბმული გაგზავნილია!", "warning")
+                return redirect(url_for('login'))
             login_user(user)
-            return redirect(url_for("index"))
+            return redirect(url_for("index")) 
     return render_template("login.html", form=form, title="ავტორიზაცია - ვეფხისტყაოსანი")
-
 
 
 @app.route("/poem")
