@@ -231,21 +231,7 @@ def author():
     return render_template("author.html", title="ავტორის შესახებ - ვეფხისტყაოსანი")
 
 # 📌 ავტორიზაციის როუტი - მხოლოდ ვერიფიცირებული მომხმარებლებისთვის
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    form = LoginForm()
-    if form.validate_on_submit():
-          user = User.query.filter(
-            (User.username == form.identifier.data) | (User.email == form.identifier.data)
-        ).first()
-        if user and check_password_hash(user.password, form.password.data):
-            if not user.is_verified:
-                send_verification_email(user.email)  # ხელახალი გაგზავნა
-                flash("თქვენს ელ-ფოსტაზე ვერიფიკაციის ბმული გაგზავნილია!", "warning")
-                return redirect(url_for('login'))
-            login_user(user)
-            return redirect(url_for("index")) 
-    return render_template("login.html", form=form, title="ავტორიზაცია - ვეფხისტყაოსანი")
+
 
 
 @app.route("/poem")
@@ -264,23 +250,53 @@ def profile():
     return render_template("profile.html", title="პროფილი - ვეფხისტყაოსანი")
 
 # 📌 რეგისტრაციის როუტი - ემაილის ვერიფიკაციის გაგზავნით
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter(
+            (User.username == form.identifier.data) | (User.email == form.identifier.data)
+        ).first()
+
+        if user and check_password_hash(user.password, form.password.data):
+            if not user.is_verified:
+                send_verification_email(user.email)  # ხელახალი ვერიფიკაციის გაგზავნა
+                flash("თქვენს ელ-ფოსტაზე ვერიფიკაციის ბმული გაგზავნილია!", "warning")
+                return redirect(url_for('login'))
+
+            login_user(user)
+            flash("ავტორიზაცია წარმატებულია!", "success")
+            return redirect(url_for("index")) 
+
+        flash("არასწორი მონაცემები!", "danger")
+    
+    return render_template("login.html", form=form, title="ავტორიზაცია - ვეფხისტყაოსანი")
+
+
 @app.route("/register", methods=["GET", "POST"])
 def register():
     form = RegisterForm()
     if form.validate_on_submit():
+        hashed_password = generate_password_hash(form.password.data)
         user = User(
             username=form.username.data,
             email=form.email.data,
-            password=form.password.data,
+            password=hashed_password,
             birthday=form.birthday.data,
             country=form.country.data,
             gender=form.gender.data,
             is_verified=False
         )
-        user.create()
+        db.session.add(user)
+        db.session.commit()
+
         send_verification_email(user.email)
         flash("თქვენს ელფოსტაზე გაგზავნილია ვერიფიკაციის ბმული!", "info")
         return redirect(url_for("login"))
+    
+    print(form.errors) 
+    return render_template("register.html", form=form, title="რეგისტრაცია - ვეფხისტყაოსანი")
+
     
     print(form.errors) 
     return render_template("register.html", form=form, title="რეგისტრაცია - ვეფხისტყაოსანი")
